@@ -4,7 +4,7 @@ import contextlib
 import re
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class Note(BaseModel):
@@ -16,6 +16,43 @@ class Note(BaseModel):
     tags: list[str] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(default_factory=datetime.now)
+
+    @field_validator("path")
+    @classmethod
+    def validate_path(cls, v: str) -> str:
+        """Validate path contains only safe characters."""
+        v = v.strip().lstrip("/")
+        if not v:
+            raise ValueError("Path cannot be empty")
+        if ".." in v:
+            raise ValueError("Path cannot contain '..'")
+        if not re.match(r"^[\w\-/]+$", v):
+            raise ValueError(
+                "Path can only contain letters, numbers, hyphens, underscores, and slashes"
+            )
+        return v
+
+    @field_validator("tags")
+    @classmethod
+    def validate_tags(cls, v: list[str]) -> list[str]:
+        """Validate and filter tags to safe characters only."""
+        validated = []
+        for tag in v:
+            tag = tag.strip()
+            if tag and re.match(r"^[\w\-]+$", tag):
+                validated.append(tag)
+        return validated
+
+    @field_validator("title")
+    @classmethod
+    def validate_title(cls, v: str) -> str:
+        """Validate title is not empty and within length limit."""
+        v = v.strip()
+        if not v:
+            raise ValueError("Title cannot be empty")
+        if len(v) > 200:
+            raise ValueError("Title cannot exceed 200 characters")
+        return v
 
     def to_markdown(self) -> str:
         """Serialize note to markdown with YAML frontmatter."""
