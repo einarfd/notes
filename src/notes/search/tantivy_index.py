@@ -16,7 +16,7 @@ class SearchIndex:
 
         # Define schema
         schema_builder = tantivy.SchemaBuilder()
-        schema_builder.add_text_field("path", stored=True)
+        schema_builder.add_text_field("path", stored=True, tokenizer_name="raw")
         schema_builder.add_text_field("title", stored=True)
         schema_builder.add_text_field("content", stored=True)
         schema_builder.add_text_field("tags", stored=True)

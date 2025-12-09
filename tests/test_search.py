@@ -42,3 +42,33 @@ def test_remove_from_index(search_index: SearchIndex):
     search_index.remove_note("removable")
     results = search_index.search("Remove")
     assert len(results) == 0
+
+
+def test_update_note_replaces_in_index(search_index: SearchIndex):
+    """Test that updating a note replaces the old version in the index."""
+    # Create initial note
+    note = Note(
+        path="projects/myproject",
+        title="Original Title",
+        content="Original content about testing.",
+    )
+    search_index.index_note(note)
+
+    # Verify initial indexing
+    results = search_index.search("Original")
+    assert len(results) == 1
+    assert results[0]["title"] == "Original Title"
+
+    # Update the note with new title/content
+    note.title = "Updated Title"
+    note.content = "Updated content about testing."
+    search_index.index_note(note)
+
+    # Search should return only ONE result with the new title
+    results = search_index.search("testing")
+    assert len(results) == 1, f"Expected 1 result, got {len(results)}: {results}"
+    assert results[0]["title"] == "Updated Title"
+
+    # Old title should not be found
+    results = search_index.search("Original")
+    assert len(results) == 0
