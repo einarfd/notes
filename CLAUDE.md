@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Notes is an AI-friendly note-taking MCP server built with FastMCP. It provides CRUD operations for notes, full-text search via Tantivy, and tag-based organization.
+Notes is an AI-friendly note-taking application with both MCP server and web UI. It provides CRUD operations for notes, full-text search via Tantivy, and tag-based organization.
 
 ## Commands
 
@@ -14,6 +14,9 @@ uv sync
 
 # Run the MCP server
 uv run notes
+
+# Run the web UI
+uv run notes-web
 
 # Run tests
 uv run pytest
@@ -30,28 +33,45 @@ uv run mypy src
 
 ## Architecture
 
+```
+┌─ MCP Server (server.py)
+│  └─ Tools (tools/*) ────────┐
+│                              ▼
+├─ Web Server (web/app.py)    NoteService (services/note_service.py)
+│  └─ Routes + Views ─────────┘       │
+│                                      ▼
+└─ Shared: Config, Models, Storage, Search
+```
+
 ### Core Components
 
-- **`server.py`**: FastMCP entry point - creates the `mcp` instance and `main()` function
 - **`config.py`**: Pydantic-based configuration with default paths (`~/.local/notes/`)
-- **`models/note.py`**: Note model with YAML frontmatter serialization (`to_markdown`/`from_markdown`)
+- **`models/note.py`**: Note model with YAML frontmatter serialization
 - **`storage/`**: Abstract `StorageBackend` interface with `FilesystemStorage` implementation
-- **`search/tantivy_index.py`**: Full-text search using Tantivy with fields: path, title, content, tags
+- **`search/tantivy_index.py`**: Full-text search using Tantivy (path field uses raw tokenizer for exact matching)
 
-### MCP Tools
+### Service Layer
 
-Tools are registered via `@mcp.tool()` decorator on the shared `mcp` instance from `server.py`:
+- **`services/note_service.py`**: Central business logic shared by MCP and web
+  - Accepts optional `Config` for dependency injection in tests
+  - Methods: `create_note`, `read_note`, `update_note`, `delete_note`, `list_notes`, `search_notes`, `list_tags`, `find_by_tag`
 
-- **`tools/notes.py`**: `create_note`, `read_note`, `update_note`, `delete_note`, `list_notes`
-- **`tools/search.py`**: `search_notes` (full-text search with limit)
-- **`tools/tags.py`**: `list_tags`, `find_by_tag`
+### MCP Server
 
-### Data Flow
+- **`server.py`**: FastMCP entry point, imports tools to register them
+- **`tools/`**: MCP tools that delegate to `NoteService`
 
-1. Tool functions get storage/index via helper functions (`_get_storage()`, `_get_index()`)
-2. Notes are stored as markdown files with YAML frontmatter at `{notes_dir}/{path}.md`
-3. Search index is maintained separately in `index_dir` and updated on create/update/delete
+### Web Server
+
+- **`web/app.py`**: FastAPI app with static files and routers
+- **`web/routes.py`**: REST API endpoints (`/api/*`)
+- **`web/views.py`**: HTML endpoints with Jinja2 templates
+- **`web/templates/`**: HTML templates using htmx
+- **`web/static/`**: JavaScript and CSS
 
 ### Testing
 
-Tests use pytest fixtures in `conftest.py` that provide temporary directories for isolated `storage`, `search_index`, and `config` instances.
+- `tests/conftest.py`: Fixtures for temp directories and `mock_config` that patches `_get_service()`
+- `tests/test_mcp_tools.py`: Integration tests for MCP tools
+- `tests/test_service.py`: Unit tests for NoteService
+- `tests/test_web.py`: API endpoint tests using FastAPI TestClient

@@ -1,6 +1,6 @@
 # Notes
 
-AI-friendly note-taking solution with MCP integration.
+AI-friendly note-taking solution with MCP integration and web UI.
 
 ## Installation
 
@@ -10,11 +10,27 @@ uv sync
 
 ## Usage
 
-Run the MCP server:
+### MCP Server
+
+Run the MCP server for AI assistants:
 
 ```bash
 uv run notes
 ```
+
+### Web UI
+
+Run the web interface:
+
+```bash
+uv run notes-web
+```
+
+Opens at http://localhost:8000 with:
+- Browse and search notes
+- Create, edit, and delete notes
+- Tag-based organization
+- REST API at `/api/*`
 
 ## MCP Client Setup
 
