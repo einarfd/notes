@@ -5,6 +5,7 @@ from pathlib import Path
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from pydantic import ValidationError
 
 from notes.services import NoteService
 
@@ -67,17 +68,32 @@ def new_note_form(request: Request) -> HTMLResponse:
     )
 
 
-@router.post("/new")
+@router.post("/new", response_model=None)
 def create_note_form(
+    request: Request,
     path: str = Form(...),
     title: str = Form(...),
     tags: str = Form(""),
     content: str = Form(""),
-) -> RedirectResponse:
+) -> RedirectResponse | HTMLResponse:
     """Handle new note form submission."""
     service = _get_service()
     tag_list = [t.strip() for t in tags.split(",") if t.strip()]
-    service.create_note(path=path, title=title, content=content, tags=tag_list)
+    try:
+        service.create_note(path=path, title=title, content=content, tags=tag_list)
+    except (ValidationError, ValueError) as e:
+        return templates.TemplateResponse(
+            request=request,
+            name="note_new.html",
+            context={
+                "error": str(e),
+                "path": path,
+                "title": title,
+                "tags": tags,
+                "content": content,
+            },
+            status_code=400,
+        )
     return RedirectResponse(url=f"/notes/{path}", status_code=303)
 
 
@@ -118,17 +134,38 @@ def edit_note_form(request: Request, path: str) -> HTMLResponse | RedirectRespon
     )
 
 
-@router.post("/notes/{path:path}")
+@router.post("/notes/{path:path}", response_model=None)
 def update_note_form(
+    request: Request,
     path: str,
     title: str = Form(...),
     tags: str = Form(""),
     content: str = Form(""),
-) -> RedirectResponse:
+) -> RedirectResponse | HTMLResponse:
     """Handle edit note form submission."""
     service = _get_service()
     tag_list = [t.strip() for t in tags.split(",") if t.strip()]
-    service.update_note(path=path, title=title, content=content, tags=tag_list)
+    try:
+        service.update_note(path=path, title=title, content=content, tags=tag_list)
+    except (ValidationError, ValueError) as e:
+        # Create a mock note object for re-displaying the form
+        from datetime import datetime
+
+        # Use raw values to avoid re-triggering validation
+        mock_note = type("MockNote", (), {
+            "path": path,
+            "title": title,
+            "content": content,
+            "tags": tag_list,
+            "created_at": datetime.now(),
+            "updated_at": datetime.now(),
+        })()
+        return templates.TemplateResponse(
+            request=request,
+            name="note_detail.html",
+            context={"note": mock_note, "editing": True, "error": str(e)},
+            status_code=400,
+        )
     return RedirectResponse(url=f"/notes/{path}", status_code=303)
 
 

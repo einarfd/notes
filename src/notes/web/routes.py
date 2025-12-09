@@ -1,7 +1,7 @@
 """REST API routes for notes."""
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from notes.services import NoteService
 
@@ -78,12 +78,15 @@ def get_note(path: str) -> NoteResponse:
 def create_note(body: NoteCreate) -> NoteResponse:
     """Create a new note."""
     service = _get_service()
-    note = service.create_note(
-        path=body.path,
-        title=body.title,
-        content=body.content,
-        tags=body.tags,
-    )
+    try:
+        note = service.create_note(
+            path=body.path,
+            title=body.title,
+            content=body.content,
+            tags=body.tags,
+        )
+    except (ValidationError, ValueError) as e:
+        raise HTTPException(status_code=400, detail=str(e)) from None
 
     return NoteResponse(
         path=note.path,
@@ -99,12 +102,15 @@ def create_note(body: NoteCreate) -> NoteResponse:
 def update_note(path: str, body: NoteUpdate) -> NoteResponse:
     """Update an existing note."""
     service = _get_service()
-    note = service.update_note(
-        path=path,
-        title=body.title,
-        content=body.content,
-        tags=body.tags,
-    )
+    try:
+        note = service.update_note(
+            path=path,
+            title=body.title,
+            content=body.content,
+            tags=body.tags,
+        )
+    except (ValidationError, ValueError) as e:
+        raise HTTPException(status_code=400, detail=str(e)) from None
 
     if note is None:
         raise HTTPException(status_code=404, detail=f"Note not found: {path}")
@@ -132,6 +138,8 @@ def delete_note(path: str) -> None:
 def search_notes(q: str, limit: int = 10) -> list[SearchResult]:
     """Search for notes."""
     service = _get_service()
+    # Cap limit to prevent excessive results
+    limit = min(limit, 100)
     results = service.search_notes(q, limit=limit)
 
     return [

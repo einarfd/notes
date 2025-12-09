@@ -1,5 +1,7 @@
 """Note CRUD operations as MCP tools."""
 
+from pydantic import ValidationError
+
 from notes.server import mcp
 from notes.services import NoteService
 
@@ -22,7 +24,10 @@ def create_note(path: str, title: str, content: str, tags: list[str] | None = No
         Confirmation message with the note path
     """
     service = _get_service()
-    service.create_note(path=path, title=title, content=content, tags=tags)
+    try:
+        service.create_note(path=path, title=title, content=content, tags=tags)
+    except (ValidationError, ValueError) as e:
+        return f"Error creating note: {e}"
     return f"Created note at '{path}'"
 
 
@@ -73,7 +78,10 @@ def update_note(
         Confirmation message or error if note not found
     """
     service = _get_service()
-    note = service.update_note(path=path, title=title, content=content, tags=tags)
+    try:
+        note = service.update_note(path=path, title=title, content=content, tags=tags)
+    except (ValidationError, ValueError) as e:
+        return f"Error updating note: {e}"
 
     if note is None:
         return f"Note not found: '{path}'"

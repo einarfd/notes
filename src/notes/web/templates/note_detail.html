@@ -5,6 +5,9 @@
 {% block content %}
 <div class="card">
     {% if editing %}
+    {% if error %}
+    <div class="error-message">{{ error }}</div>
+    {% endif %}
     <form method="POST" action="/notes/{{ note.path }}">
         <div class="form-group">
             <label for="title">Title</label>

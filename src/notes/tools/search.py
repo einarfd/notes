@@ -14,12 +14,14 @@ def search_notes(query: str, limit: int = 10) -> str:
 
     Args:
         query: The search query (supports full-text search)
-        limit: Maximum number of results to return (default: 10)
+        limit: Maximum number of results to return (default: 10, max: 100)
 
     Returns:
         Formatted search results with paths, titles, and relevance scores
     """
     service = _get_service()
+    # Cap limit to prevent excessive results
+    limit = min(limit, 100)
     results = service.search_notes(query, limit=limit)
 
     if not results:
