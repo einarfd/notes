@@ -19,6 +19,8 @@ uv run notes
 
 # Run the web UI
 uv run notes-web
+uv run notes-web --port 3000  # custom port
+uv run notes-web --host 127.0.0.1  # localhost only
 
 # Run tests
 uv run pytest
@@ -48,7 +50,7 @@ uv run mypy src
 ### Core Components
 
 - **`config.py`**: Pydantic-based configuration with default paths (`~/.local/notes/`)
-- **`models/note.py`**: Note model with YAML frontmatter serialization
+- **`models/note.py`**: Note model with YAML frontmatter serialization and Pydantic validators (path, title, tags)
 - **`storage/`**: Abstract `StorageBackend` interface with `FilesystemStorage` implementation
 - **`search/tantivy_index.py`**: Full-text search using Tantivy (path field uses raw tokenizer for exact matching)
 
@@ -74,6 +76,10 @@ uv run mypy src
 ### Testing
 
 - `tests/conftest.py`: Fixtures for temp directories and `mock_config` that patches `_get_service()`
-- `tests/test_mcp_tools.py`: Integration tests for MCP tools
-- `tests/test_service.py`: Unit tests for NoteService
-- `tests/test_web.py`: API endpoint tests using FastAPI TestClient
+- `tests/test_storage.py`: FilesystemStorage tests
+- `tests/test_search.py`: Tantivy search index tests
+- `tests/test_tools.py`: Note model serialization tests
+- `tests/test_service.py`: NoteService unit tests
+- `tests/test_mcp_tools.py`: MCP tool integration tests
+- `tests/test_web.py`: REST API and HTML view tests
+- `tests/test_validation.py`: Input validation and security tests
