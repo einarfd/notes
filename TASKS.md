@@ -29,14 +29,15 @@
 - [x] Test with Claude Desktop
 - [ ] Test with other MCP clients
 - [x] Document setup for different AI tools
-- [ ] Add CLI for direct note management
+- [x] Add web UI for note management (replaces CLI task)
 
 ## Phase 5: Production Hardening
 
-- [ ] Add comprehensive error handling
+- [x] Add input validation (path traversal prevention, model validators)
+- [ ] Add comprehensive error handling for edge cases
 - [ ] Implement logging
-- [ ] Add configuration file support
-- [ ] Write user documentation
+- [ ] Add user configuration file support
+- [x] Write user documentation (README with MCP client setup)
 - [ ] Add backup/export functionality
 
 ## Backlog / Ideas
@@ -44,6 +45,6 @@
 - [ ] Team/shared notes support
 - [ ] Note versioning/history
 - [ ] Encryption for sensitive notes
-- [ ] Web UI for browsing
+- [x] Web UI for browsing (moved to Phase 4, completed)
 - [ ] Import from other note tools (Obsidian, Notion, etc.)
 - [ ] Claude skills integration
