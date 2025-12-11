@@ -13,7 +13,7 @@
 
 - [ ] Improve search with better ranking
 - [x] Add tag-based filtering
-- [ ] Implement path-based navigation (list notes in folder)
+- [x] Implement path-based navigation (list notes in folder)
 - [ ] Add search by date range
 - [ ] Support markdown links between notes
 
