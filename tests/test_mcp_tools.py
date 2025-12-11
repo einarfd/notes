@@ -58,15 +58,17 @@ class TestReadNote:
 
         result = _read_note("readable")
 
-        assert "# Readable" in result
-        assert "Content here" in result
-        assert "**Path:** readable" in result
+        assert result["path"] == "readable"
+        assert result["title"] == "Readable"
+        assert result["content"] == "Content here"
+        assert "created_at" in result
+        assert "updated_at" in result
 
     def test_read_note_not_found(self, mock_config: Config):
         """Test reading a nonexistent note."""
         result = _read_note("nonexistent")
 
-        assert "Note not found: 'nonexistent'" in result
+        assert result == "Note not found: 'nonexistent'"
 
 
 class TestUpdateNote:
@@ -82,7 +84,7 @@ class TestUpdateNote:
 
         # Verify the update
         read_result = _read_note("updatable")
-        assert "# Updated Title" in read_result
+        assert read_result["title"] == "Updated Title"
 
     def test_update_note_content(self, mock_config: Config):
         """Test updating note content."""
@@ -91,7 +93,7 @@ class TestUpdateNote:
         _update_note("updatable2", content="New content")
 
         read_result = _read_note("updatable2")
-        assert "New content" in read_result
+        assert read_result["content"] == "New content"
 
     def test_update_note_tags(self, mock_config: Config):
         """Test updating note tags."""
@@ -100,7 +102,7 @@ class TestUpdateNote:
         _update_note("updatable3", tags=["new", "tags"])
 
         read_result = _read_note("updatable3")
-        assert "new, tags" in read_result
+        assert read_result["tags"] == ["new", "tags"]
 
     def test_update_note_not_found(self, mock_config: Config):
         """Test updating a nonexistent note."""
@@ -138,7 +140,7 @@ class TestListNotes:
         """Test listing notes when none exist."""
         result = _list_notes()
 
-        assert "No notes found" in result
+        assert result == []
 
     def test_list_notes(self, mock_config: Config):
         """Test listing multiple notes."""
@@ -163,8 +165,10 @@ class TestSearchNotes:
 
         result = _search_notes("Python")
 
-        assert "Python Guide" in result
-        assert "python-guide" in result
+        assert result["query"] == "Python"
+        assert len(result["results"]) == 1
+        assert result["results"][0]["title"] == "Python Guide"
+        assert result["results"][0]["path"] == "python-guide"
 
     def test_search_notes_no_results(self, mock_config: Config):
         """Test search with no matching results."""
@@ -172,7 +176,8 @@ class TestSearchNotes:
 
         result = _search_notes("nonexistent")
 
-        assert "No notes found matching" in result
+        assert result["query"] == "nonexistent"
+        assert result["results"] == []
 
     def test_search_notes_by_content(self, mock_config: Config):
         """Test searching by content."""
@@ -180,7 +185,8 @@ class TestSearchNotes:
 
         result = _search_notes("secret")
 
-        assert "Normal Title" in result
+        assert len(result["results"]) == 1
+        assert result["results"][0]["title"] == "Normal Title"
 
 
 class TestListTags:
@@ -190,7 +196,7 @@ class TestListTags:
         """Test listing tags when none exist."""
         result = _list_tags()
 
-        assert "No tags found" in result
+        assert result == {}
 
     def test_list_tags(self, mock_config: Config):
         """Test listing tags with counts."""
@@ -200,10 +206,10 @@ class TestListTags:
 
         result = _list_tags()
 
-        assert "python (2 notes)" in result
-        assert "tutorial (1 note)" in result
-        assert "guide (1 note)" in result
-        assert "rust (1 note)" in result
+        assert result["python"] == 2
+        assert result["tutorial"] == 1
+        assert result["guide"] == 1
+        assert result["rust"] == 1
 
 
 class TestFindByTag:
@@ -217,9 +223,11 @@ class TestFindByTag:
 
         result = _find_by_tag("python")
 
-        assert "Python Basics" in result
-        assert "Python Advanced" in result
-        assert "Rust Intro" not in result
+        assert result["tag"] == "python"
+        assert len(result["notes"]) == 2
+        titles = [n["title"] for n in result["notes"]]
+        assert "Python Basics" in titles
+        assert "Python Advanced" in titles
 
     def test_find_by_tag_no_results(self, mock_config: Config):
         """Test finding notes by nonexistent tag."""
@@ -227,7 +235,8 @@ class TestFindByTag:
 
         result = _find_by_tag("nonexistent")
 
-        assert "No notes found with tag 'nonexistent'" in result
+        assert result["tag"] == "nonexistent"
+        assert result["notes"] == []
 
 
 class TestListNotesInFolder:

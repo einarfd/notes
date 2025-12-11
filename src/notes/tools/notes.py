@@ -32,14 +32,14 @@ def create_note(path: str, title: str, content: str, tags: list[str] | None = No
 
 
 @mcp.tool()
-def read_note(path: str) -> str:
+def read_note(path: str) -> dict[str, str | list[str]] | str:
     """Read a note by its path.
 
     Args:
         path: The path/identifier of the note to read
 
     Returns:
-        The note content with metadata, or an error message if not found
+        The note data as a dict, or an error message if not found
     """
     service = _get_service()
     note = service.read_note(path)
@@ -47,16 +47,14 @@ def read_note(path: str) -> str:
     if note is None:
         return f"Note not found: '{path}'"
 
-    return f"""# {note.title}
-
-**Path:** {note.path}
-**Tags:** {', '.join(note.tags) if note.tags else 'none'}
-**Created:** {note.created_at.isoformat()}
-**Updated:** {note.updated_at.isoformat()}
-
----
-
-{note.content}"""
+    return {
+        "path": note.path,
+        "title": note.title,
+        "content": note.content,
+        "tags": note.tags,
+        "created_at": note.created_at.isoformat(),
+        "updated_at": note.updated_at.isoformat(),
+    }
 
 
 @mcp.tool()
@@ -108,19 +106,14 @@ def delete_note(path: str) -> str:
 
 
 @mcp.tool()
-def list_notes() -> str:
+def list_notes() -> list[str]:
     """List all notes.
 
     Returns:
-        A formatted list of all note paths
+        List of all note paths
     """
     service = _get_service()
-    paths = service.list_notes()
-
-    if not paths:
-        return "No notes found."
-
-    return "Notes:\n" + "\n".join(f"  - {path}" for path in paths)
+    return service.list_notes()
 
 
 @mcp.tool()
