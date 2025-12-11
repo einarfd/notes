@@ -419,3 +419,59 @@ class TestHTMLViews:
 
         assert response.status_code == 200
         assert "Searchable" in response.text
+
+    def test_folder_view_top_level(self, client: TestClient):
+        """Test viewing top-level notes only."""
+        client.post("/api/notes", json={"path": "top1", "title": "Top 1", "content": ""})
+        client.post("/api/notes", json={"path": "top2", "title": "Top 2", "content": ""})
+        client.post(
+            "/api/notes", json={"path": "folder/nested", "title": "Nested", "content": ""}
+        )
+
+        response = client.get("/folder")
+
+        assert response.status_code == 200
+        assert "Top 1" in response.text
+        assert "Top 2" in response.text
+        assert "Nested" not in response.text
+
+    def test_folder_view_specific_folder(self, client: TestClient):
+        """Test viewing notes in a specific folder."""
+        client.post(
+            "/api/notes", json={"path": "root-note", "title": "Root Note", "content": ""}
+        )
+        client.post(
+            "/api/notes", json={"path": "projects/proj1", "title": "Proj 1", "content": ""}
+        )
+        client.post(
+            "/api/notes", json={"path": "projects/proj2", "title": "Proj 2", "content": ""}
+        )
+
+        response = client.get("/folder/projects")
+
+        assert response.status_code == 200
+        assert "Proj 1" in response.text
+        assert "Proj 2" in response.text
+        assert "Root Note" not in response.text
+
+    def test_folder_view_shows_breadcrumbs(self, client: TestClient):
+        """Test that folder view shows breadcrumb navigation."""
+        client.post(
+            "/api/notes",
+            json={"path": "projects/web/note", "title": "Web Note", "content": ""},
+        )
+
+        response = client.get("/folder/projects/web")
+
+        assert response.status_code == 200
+        assert "projects" in response.text
+        assert "web" in response.text
+
+    def test_folder_view_empty_folder(self, client: TestClient):
+        """Test viewing an empty folder."""
+        client.post("/api/notes", json={"path": "elsewhere/note", "title": "Note", "content": ""})
+
+        response = client.get("/folder/empty")
+
+        assert response.status_code == 200
+        assert "No notes in this folder" in response.text

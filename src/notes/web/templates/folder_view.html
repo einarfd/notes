@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}{% if folder %}{{ folder }}{% else %}Top-level{% endif %} - Notes{% endblock %}
+
+{% block content %}
+<div class="breadcrumbs">
+    <a href="/">All Notes</a>
+    {% if not folder %}
+    / <strong>Top-level</strong>
+    {% else %}
+    / <a href="/folder">Top-level</a>
+    {% for crumb in breadcrumbs %}
+    / {% if loop.last %}<strong>{{ crumb.name }}</strong>{% else %}<a href="/folder/{{ crumb.path }}">{{ crumb.name }}</a>{% endif %}
+    {% endfor %}
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2>{% if folder %}{{ folder }}{% else %}Top-level Notes{% endif %}</h2>
+
+    <div id="notes-list">
+        {% if notes %}
+            {% for note in notes %}
+            <div class="note-item">
+                <div>
+                    <a href="/notes/{{ note.path }}">{{ note.title }}</a>
+                    <div class="note-path">{{ note.path }}</div>
+                    {% if note.tags %}
+                    <div>
+                        {% for tag in note.tags %}
+                        <span class="tag">{{ tag }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <p>No notes in this folder.</p>
+                <a href="/new" class="btn">Create a note</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

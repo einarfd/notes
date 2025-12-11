@@ -18,6 +18,20 @@ def _get_service() -> NoteService:
     return NoteService()
 
 
+def _build_breadcrumbs(path: str) -> list[dict[str, str]]:
+    """Build breadcrumb navigation from path."""
+    if not path:
+        return []
+    parts = path.split("/")
+    breadcrumbs = []
+    for i, part in enumerate(parts):
+        breadcrumbs.append({
+            "name": part,
+            "path": "/".join(parts[: i + 1]),
+        })
+    return breadcrumbs
+
+
 @router.get("/", response_class=HTMLResponse)
 def index(request: Request) -> HTMLResponse:
     """Show all notes."""
@@ -205,4 +219,50 @@ def view_tag(request: Request, tag: str) -> HTMLResponse:
         request=request,
         name="notes_list.html",
         context={"notes": notes},
+    )
+
+
+@router.get("/folder", response_class=HTMLResponse)
+def view_top_level_folder(request: Request) -> HTMLResponse:
+    """Show top-level notes only."""
+    service = _get_service()
+    paths = service.list_notes_in_folder("")
+
+    notes = []
+    for path in paths:
+        note = service.read_note(path)
+        if note:
+            notes.append(note)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="folder_view.html",
+        context={
+            "notes": notes,
+            "folder": "",
+            "breadcrumbs": [],
+        },
+    )
+
+
+@router.get("/folder/{path:path}", response_class=HTMLResponse)
+def view_folder(request: Request, path: str) -> HTMLResponse:
+    """Show notes in a folder."""
+    service = _get_service()
+    paths = service.list_notes_in_folder(path)
+
+    notes = []
+    for note_path in paths:
+        note = service.read_note(note_path)
+        if note:
+            notes.append(note)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="folder_view.html",
+        context={
+            "notes": notes,
+            "folder": path,
+            "breadcrumbs": _build_breadcrumbs(path),
+        },
     )
