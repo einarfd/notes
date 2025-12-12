@@ -67,6 +67,8 @@ def update_note(
     title: str | None = None,
     content: str | None = None,
     tags: list[str] | None = None,
+    add_tags: list[str] | None = None,
+    remove_tags: list[str] | None = None,
     new_path: str | None = None,
     update_backlinks: bool = True,
 ) -> str:
@@ -76,7 +78,9 @@ def update_note(
         path: The path/identifier of the note to update
         title: New title (optional, keeps existing if not provided)
         content: New content (optional, keeps existing if not provided)
-        tags: New tags (optional, keeps existing if not provided)
+        tags: Replace all tags (optional, mutually exclusive with add_tags/remove_tags)
+        add_tags: Tags to add to existing tags (optional)
+        remove_tags: Tags to remove from existing tags (optional)
         new_path: New path to move the note to (optional)
         update_backlinks: If moving, whether to update links in other notes (default True)
 
@@ -93,6 +97,8 @@ def update_note(
             title=title,
             content=content,
             tags=tags,
+            add_tags=add_tags,
+            remove_tags=remove_tags,
             new_path=new_path,
             update_backlinks=update_backlinks,
         )

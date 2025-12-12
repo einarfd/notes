@@ -108,6 +108,40 @@ class TestUpdateNote:
         read_result = _read_note("updatable3")
         assert read_result["tags"] == ["new", "tags"]
 
+    def test_update_note_add_tags(self, mock_config: Config):
+        """Test adding tags to a note."""
+        _create_note(path="taggable", title="Note", content="", tags=["existing"])
+
+        _update_note("taggable", add_tags=["new", "another"])
+
+        result = _read_note("taggable")
+        assert sorted(result["tags"]) == ["another", "existing", "new"]
+
+    def test_update_note_remove_tags(self, mock_config: Config):
+        """Test removing tags from a note."""
+        _create_note(path="taggable2", title="Note", content="", tags=["keep", "remove"])
+
+        _update_note("taggable2", remove_tags=["remove"])
+
+        result = _read_note("taggable2")
+        assert result["tags"] == ["keep"]
+
+    def test_update_note_add_and_remove_tags(self, mock_config: Config):
+        """Test adding and removing tags simultaneously."""
+        _create_note(path="taggable3", title="Note", content="", tags=["a", "b"])
+
+        _update_note("taggable3", add_tags=["c"], remove_tags=["a"])
+
+        result = _read_note("taggable3")
+        assert sorted(result["tags"]) == ["b", "c"]
+
+    def test_update_note_tags_mutually_exclusive(self, mock_config: Config):
+        """Test that tags is mutually exclusive with add_tags/remove_tags."""
+        _create_note(path="taggable4", title="Note", content="", tags=["old"])
+
+        with pytest.raises(ToolError, match="Cannot use 'tags' with 'add_tags' or 'remove_tags'"):
+            _update_note("taggable4", tags=["new"], add_tags=["extra"])
+
     def test_update_note_not_found(self, mock_config: Config):
         """Test updating a nonexistent note raises ToolError."""
         with pytest.raises(ToolError, match="Note not found: 'nonexistent'"):

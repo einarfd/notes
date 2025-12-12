@@ -117,6 +117,8 @@ class NoteService:
         title: str | None = None,
         content: str | None = None,
         tags: list[str] | None = None,
+        add_tags: list[str] | None = None,
+        remove_tags: list[str] | None = None,
         new_path: str | None = None,
         update_backlinks: bool = True,
     ) -> UpdateResult | None:
@@ -126,7 +128,9 @@ class NoteService:
             path: The path/identifier of the note
             title: New title (optional)
             content: New content (optional)
-            tags: New tags (optional)
+            tags: New tags - replaces all existing tags (optional)
+            add_tags: Tags to add to existing tags (optional, mutually exclusive with tags)
+            remove_tags: Tags to remove from existing tags (optional, mutually exclusive with tags)
             new_path: New path to move the note to (optional)
             update_backlinks: If moving, whether to update links in other notes (default True)
 
@@ -134,8 +138,12 @@ class NoteService:
             UpdateResult with the note and backlink info, or None if not found
 
         Raises:
-            ValueError: If new_path already exists
+            ValueError: If new_path already exists, or if tags is used with add_tags/remove_tags
         """
+        # Validate mutually exclusive parameters
+        if tags is not None and (add_tags is not None or remove_tags is not None):
+            raise ValueError("Cannot use 'tags' with 'add_tags' or 'remove_tags'")
+
         note = self.storage.load(path)
         if note is None:
             return None
@@ -146,6 +154,14 @@ class NoteService:
             note.content = content
         if tags is not None:
             note.tags = tags
+        elif add_tags is not None or remove_tags is not None:
+            # Incremental tag operations
+            current_tags = set(note.tags)
+            if add_tags:
+                current_tags.update(add_tags)
+            if remove_tags:
+                current_tags.difference_update(remove_tags)
+            note.tags = sorted(current_tags)
 
         note.updated_at = datetime.now()
 

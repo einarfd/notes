@@ -79,6 +79,69 @@ class TestNoteServiceUpdate:
 
         assert result is None
 
+    def test_update_note_add_tags(self, config: Config):
+        """Test adding tags to a note."""
+        service = NoteService(config)
+        service.create_note(path="note", title="Note", content="", tags=["existing"])
+
+        result = service.update_note("note", add_tags=["new", "another"])
+
+        assert result is not None
+        assert sorted(result.note.tags) == ["another", "existing", "new"]
+
+    def test_update_note_remove_tags(self, config: Config):
+        """Test removing tags from a note."""
+        service = NoteService(config)
+        service.create_note(path="note", title="Note", content="", tags=["keep", "remove"])
+
+        result = service.update_note("note", remove_tags=["remove"])
+
+        assert result is not None
+        assert result.note.tags == ["keep"]
+
+    def test_update_note_add_and_remove_tags(self, config: Config):
+        """Test adding and removing tags simultaneously."""
+        service = NoteService(config)
+        service.create_note(path="note", title="Note", content="", tags=["a", "b", "c"])
+
+        result = service.update_note("note", add_tags=["d"], remove_tags=["b"])
+
+        assert result is not None
+        assert sorted(result.note.tags) == ["a", "c", "d"]
+
+    def test_update_note_tags_mutually_exclusive(self, config: Config):
+        """Test that tags is mutually exclusive with add_tags/remove_tags."""
+        import pytest
+
+        service = NoteService(config)
+        service.create_note(path="note", title="Note", content="", tags=["old"])
+
+        with pytest.raises(ValueError, match="Cannot use 'tags' with 'add_tags' or 'remove_tags'"):
+            service.update_note("note", tags=["new"], add_tags=["extra"])
+
+        with pytest.raises(ValueError, match="Cannot use 'tags' with 'add_tags' or 'remove_tags'"):
+            service.update_note("note", tags=["new"], remove_tags=["old"])
+
+    def test_update_note_add_duplicate_tag(self, config: Config):
+        """Test adding a tag that already exists is idempotent."""
+        service = NoteService(config)
+        service.create_note(path="note", title="Note", content="", tags=["existing"])
+
+        result = service.update_note("note", add_tags=["existing"])
+
+        assert result is not None
+        assert result.note.tags == ["existing"]
+
+    def test_update_note_remove_nonexistent_tag(self, config: Config):
+        """Test removing a nonexistent tag is a no-op."""
+        service = NoteService(config)
+        service.create_note(path="note", title="Note", content="", tags=["existing"])
+
+        result = service.update_note("note", remove_tags=["nonexistent"])
+
+        assert result is not None
+        assert result.note.tags == ["existing"]
+
 
 class TestNoteServiceDelete:
     """Tests for NoteService.delete_note."""
