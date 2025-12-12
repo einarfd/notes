@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}Search Help - Notes{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Search Syntax</h2>
+
+    <p>The search uses <a href="https://docs.rs/tantivy/latest/tantivy/query/struct.QueryParser.html" target="_blank">Tantivy's query syntax</a>.</p>
+
+    <h3>Basic Search</h3>
+    <table class="syntax-table">
+        <tr>
+            <td><code>python</code></td>
+            <td>Find notes containing "python"</td>
+        </tr>
+        <tr>
+            <td><code>python tutorial</code></td>
+            <td>Find notes containing "python" OR "tutorial"</td>
+        </tr>
+        <tr>
+            <td><code>"machine learning"</code></td>
+            <td>Find exact phrase</td>
+        </tr>
+    </table>
+
+    <h3>Boolean Operators</h3>
+    <table class="syntax-table">
+        <tr>
+            <td><code>python AND tutorial</code></td>
+            <td>Must contain both terms</td>
+        </tr>
+        <tr>
+            <td><code>python OR rust</code></td>
+            <td>Contains either term</td>
+        </tr>
+        <tr>
+            <td><code>+python -beginner</code></td>
+            <td>Must have "python", must not have "beginner"</td>
+        </tr>
+    </table>
+
+    <h3>Field-Specific Search</h3>
+    <table class="syntax-table">
+        <tr>
+            <td><code>title:python</code></td>
+            <td>Search only in title</td>
+        </tr>
+        <tr>
+            <td><code>content:tutorial</code></td>
+            <td>Search only in content</td>
+        </tr>
+        <tr>
+            <td><code>tags:guide</code></td>
+            <td>Search in tags</td>
+        </tr>
+    </table>
+
+    <h3>Date Range Search</h3>
+    <table class="syntax-table">
+        <tr>
+            <td><code>created_at:[now-7d TO now]</code></td>
+            <td>Notes from last 7 days</td>
+        </tr>
+        <tr>
+            <td><code>updated_at:[now-1M TO now]</code></td>
+            <td>Updated in last month</td>
+        </tr>
+        <tr>
+            <td><code>created_at:[2024-01-01 TO 2024-12-31]</code></td>
+            <td>Notes from 2024</td>
+        </tr>
+    </table>
+
+    <h3>Date Math</h3>
+    <p>Use these in date range queries:</p>
+    <table class="syntax-table">
+        <tr>
+            <td><code>now</code></td>
+            <td>Current timestamp</td>
+        </tr>
+        <tr>
+            <td><code>now-7d</code></td>
+            <td>7 days ago</td>
+        </tr>
+        <tr>
+            <td><code>now+2w</code></td>
+            <td>2 weeks from now</td>
+        </tr>
+        <tr>
+            <td><code>2024-01-01-1M</code></td>
+            <td>1 month before Jan 1, 2024</td>
+        </tr>
+    </table>
+    <p><strong>Duration units:</strong> <code>d</code> (days), <code>w</code> (weeks), <code>M</code> (months), <code>y</code> (years)</p>
+
+    <h3>Available Fields</h3>
+    <table class="syntax-table">
+        <tr>
+            <td><code>title</code></td>
+            <td>Note title</td>
+        </tr>
+        <tr>
+            <td><code>content</code></td>
+            <td>Note body</td>
+        </tr>
+        <tr>
+            <td><code>tags</code></td>
+            <td>Note tags (space-separated)</td>
+        </tr>
+        <tr>
+            <td><code>created_at</code></td>
+            <td>Creation date</td>
+        </tr>
+        <tr>
+            <td><code>updated_at</code></td>
+            <td>Last update date</td>
+        </tr>
+    </table>
+
+    <h3>Examples</h3>
+    <table class="syntax-table">
+        <tr>
+            <td><code>title:python AND tags:tutorial</code></td>
+            <td>Python tutorials</td>
+        </tr>
+        <tr>
+            <td><code>python AND created_at:[now-1M TO now]</code></td>
+            <td>Python notes from last month</td>
+        </tr>
+        <tr>
+            <td><code>"getting started" AND tags:guide</code></td>
+            <td>Getting started guides</td>
+        </tr>
+    </table>
+</div>
+
+<style>
+    .syntax-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 15px 0;
+    }
+    .syntax-table td {
+        padding: 8px 12px;
+        border-bottom: 1px solid #eee;
+    }
+    .syntax-table td:first-child {
+        width: 45%;
+        font-family: monospace;
+        background: #f5f5f5;
+    }
+    .syntax-table tr:last-child td {
+        border-bottom: none;
+    }
+    h3 {
+        margin-top: 25px;
+        margin-bottom: 10px;
+        color: #333;
+    }
+</style>
+{% endblock %}

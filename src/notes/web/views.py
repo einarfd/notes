@@ -195,6 +195,16 @@ def update_note_form(
     return RedirectResponse(url=f"/notes/{path}", status_code=303)
 
 
+@router.get("/search/help", response_class=HTMLResponse)
+def search_help(request: Request) -> HTMLResponse:
+    """Show search syntax help."""
+    return templates.TemplateResponse(
+        request=request,
+        name="search_help.html",
+        context={},
+    )
+
+
 @router.get("/tags", response_class=HTMLResponse)
 def list_tags_view(request: Request) -> HTMLResponse:
     """Show all tags."""

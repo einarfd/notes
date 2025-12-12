@@ -20,11 +20,10 @@ def search_notes(query: str, limit: int = 10) -> dict[str, str | list[dict[str, 
         - updated_at: Last update timestamp (date, searchable)
 
     Query syntax:
-        - Simple text: "python tutorial"
+        - Simple text: "python tutorial" (matches either term)
         - Field-specific: "title:python"
-        - Boolean: "python AND tutorial", "python OR rust", "python NOT beginner"
-        - Phrases: '"machine learning"'
-        - Wildcards: "pyth*"
+        - Boolean: "python AND tutorial", "python OR rust", "+python -beginner"
+        - Phrases: '"machine learning"' (exact phrase)
         - Date ranges: "created_at:[2024-01-01 TO 2024-12-31]"
 
     Date math (supported in date range queries):
@@ -35,14 +34,14 @@ def search_notes(query: str, limit: int = 10) -> dict[str, str | list[dict[str, 
         - 2024-06-15+1M: 1 month after Jun 15, 2024
         - Duration units: d (days), w (weeks), M (months), y (years)
 
-    Date range examples:
+    Examples:
         - "created_at:[now-7d TO now]" - notes from last 7 days
         - "updated_at:[now-1M TO now]" - notes updated in last month
-        - "created_at:[2024-01-01 TO 2024-01-01+1M]" - notes from January 2024
         - "python AND created_at:[now-1y TO *]" - python notes from last year
+        - "title:guide AND tags:python" - python guides
 
     Args:
-        query: Search query using Tantivy/Lucene-like syntax
+        query: Search query using Tantivy query syntax
         limit: Maximum number of results to return (default: 10, max: 100)
 
     Returns:
