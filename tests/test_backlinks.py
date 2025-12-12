@@ -193,3 +193,90 @@ class TestBacklinkInfo:
         """Test link_count with no lines."""
         info = BacklinkInfo(source_path="source", line_numbers=[])
         assert info.link_count == 0
+
+
+class TestBacklinksIndexRebuild:
+    """Tests for clear and rebuild functionality."""
+
+    def test_clear_removes_all_backlinks(self, index: BacklinksIndex):
+        """Test that clear removes all backlinks from the index."""
+        index.update_note_links(
+            "source1", [WikiLink(target_path="target1", display_text=None, line_number=1)]
+        )
+        index.update_note_links(
+            "source2", [WikiLink(target_path="target2", display_text=None, line_number=2)]
+        )
+
+        # Verify backlinks exist
+        assert len(index.get_backlinks("target1")) == 1
+        assert len(index.get_backlinks("target2")) == 1
+
+        index.clear()
+
+        # Verify index is empty
+        assert index.get_backlinks("target1") == []
+        assert index.get_backlinks("target2") == []
+
+    def test_rebuild_reindexes_all_notes(self, index: BacklinksIndex):
+        """Test that rebuild reindexes all provided notes."""
+        from notes.models import Note
+
+        notes = [
+            Note(path="note1", title="Note 1", content="Link to [[target1]]"),
+            Note(path="note2", title="Note 2", content="Link to [[target2]]"),
+            Note(path="note3", title="Note 3", content="Links to [[target1]] and [[target2]]"),
+        ]
+
+        count = index.rebuild(notes)
+
+        assert count == 3
+        # target1 is linked from note1 and note3
+        assert len(index.get_backlinks("target1")) == 2
+        # target2 is linked from note2 and note3
+        assert len(index.get_backlinks("target2")) == 2
+
+    def test_rebuild_replaces_existing_index(self, index: BacklinksIndex):
+        """Test that rebuild replaces the existing index."""
+        from notes.models import Note
+
+        # Create initial backlinks
+        index.update_note_links(
+            "old-source", [WikiLink(target_path="old-target", display_text=None, line_number=1)]
+        )
+        assert len(index.get_backlinks("old-target")) == 1
+
+        # Rebuild with different notes
+        new_notes = [
+            Note(path="new-source", title="New", content="Link to [[new-target]]"),
+        ]
+        index.rebuild(new_notes)
+
+        # Old backlinks should be gone
+        assert index.get_backlinks("old-target") == []
+        # New backlinks should exist
+        assert len(index.get_backlinks("new-target")) == 1
+
+    def test_rebuild_empty_list(self, index: BacklinksIndex):
+        """Test rebuild with empty list clears the index."""
+        index.update_note_links(
+            "source", [WikiLink(target_path="target", display_text=None, line_number=1)]
+        )
+
+        count = index.rebuild([])
+
+        assert count == 0
+        assert index.get_backlinks("target") == []
+
+    def test_rebuild_note_without_links(self, index: BacklinksIndex):
+        """Test rebuild handles notes without links."""
+        from notes.models import Note
+
+        notes = [
+            Note(path="no-links", title="No Links", content="Just plain text"),
+            Note(path="has-links", title="Has Links", content="Link to [[target]]"),
+        ]
+
+        count = index.rebuild(notes)
+
+        assert count == 2
+        assert len(index.get_backlinks("target")) == 1

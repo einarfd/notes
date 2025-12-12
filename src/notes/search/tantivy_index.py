@@ -119,6 +119,26 @@ class SearchIndex:
         writer.delete_documents("path", path)
         writer.commit()
 
+    def clear(self) -> None:
+        """Clear all documents from the index."""
+        writer = self.index.writer()
+        writer.delete_all_documents()
+        writer.commit()
+
+    def rebuild(self, notes: list[Note]) -> int:
+        """Rebuild the index from a list of notes.
+
+        Args:
+            notes: List of notes to index
+
+        Returns:
+            Number of notes indexed
+        """
+        self.clear()
+        for note in notes:
+            self.index_note(note)
+        return len(notes)
+
     def search(self, query: str, limit: int = 10) -> list[dict[str, str]]:
         """Search for notes matching the query."""
         self.index.reload()

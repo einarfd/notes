@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from notes.links.parser import WikiLink
+    from notes.models import Note
 
 
 @dataclass
@@ -159,3 +160,27 @@ class BacklinksIndex:
             self._links[new_path] = self._links.pop(old_path)
 
         self._save()
+
+    def clear(self) -> None:
+        """Clear all backlinks from the index."""
+        self._ensure_loaded()
+        self._links = {}
+        self._save()
+
+    def rebuild(self, notes: list[Note]) -> int:
+        """Rebuild the backlinks index from a list of notes.
+
+        Args:
+            notes: List of notes to process for links
+
+        Returns:
+            Number of notes processed
+        """
+        from notes.links.parser import extract_links
+
+        self.clear()
+        for note in notes:
+            links = extract_links(note.content)
+            if links:
+                self.update_note_links(note.path, links)
+        return len(notes)

@@ -195,3 +195,63 @@ def test_search_with_date_math(search_index: SearchIndex):
     # Search for notes from last 60 days (should get both)
     results = search_index.search("created_at:[now-60d TO now]")
     assert len(results) == 2
+
+
+class TestSearchIndexRebuild:
+    """Tests for clear and rebuild functionality."""
+
+    def test_clear_removes_all_documents(self, search_index: SearchIndex):
+        """Test that clear removes all documents from the index."""
+        note1 = Note(path="note1", title="First Note", content="Content 1")
+        note2 = Note(path="note2", title="Second Note", content="Content 2")
+        search_index.index_note(note1)
+        search_index.index_note(note2)
+
+        # Verify notes are indexed
+        assert len(search_index.search("Note")) == 2
+
+        search_index.clear()
+
+        # Verify index is empty
+        assert len(search_index.search("Note")) == 0
+
+    def test_rebuild_reindexes_all_notes(self, search_index: SearchIndex):
+        """Test that rebuild reindexes all provided notes."""
+        notes = [
+            Note(path="note1", title="First Note", content="Content 1"),
+            Note(path="note2", title="Second Note", content="Content 2"),
+            Note(path="note3", title="Third Note", content="Content 3"),
+        ]
+
+        count = search_index.rebuild(notes)
+
+        assert count == 3
+        assert len(search_index.search("Note")) == 3
+
+    def test_rebuild_replaces_existing_index(self, search_index: SearchIndex):
+        """Test that rebuild replaces the existing index."""
+        # Index some initial notes
+        old_note = Note(path="old", title="Old Note", content="Old content")
+        search_index.index_note(old_note)
+
+        # Rebuild with different notes
+        new_notes = [
+            Note(path="new1", title="New Note 1", content="New content"),
+            Note(path="new2", title="New Note 2", content="New content"),
+        ]
+        search_index.rebuild(new_notes)
+
+        # Old note should not be found
+        assert len(search_index.search("Old")) == 0
+        # New notes should be found
+        assert len(search_index.search("New")) == 2
+
+    def test_rebuild_empty_list(self, search_index: SearchIndex):
+        """Test rebuild with empty list clears the index."""
+        note = Note(path="note", title="Some Note", content="Content")
+        search_index.index_note(note)
+
+        count = search_index.rebuild([])
+
+        assert count == 0
+        assert len(search_index.search("Note")) == 0
