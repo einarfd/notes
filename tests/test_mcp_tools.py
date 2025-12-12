@@ -4,6 +4,7 @@ import pytest
 from fastmcp.exceptions import ToolError
 
 from notes.config import Config
+from notes.tools.links import get_backlinks
 from notes.tools.notes import (
     create_note,
     delete_note,
@@ -18,6 +19,7 @@ from notes.tools.tags import find_by_tag, list_tags
 # Access underlying functions (unwrap from @mcp.tool() decorator)
 _create_note = create_note.fn
 _read_note = read_note.fn
+_get_backlinks = get_backlinks.fn
 _update_note = update_note.fn
 _delete_note = delete_note.fn
 _list_notes = list_notes.fn
@@ -288,3 +290,72 @@ class TestListNotesInFolder:
         assert result["folder"] == "projects"
         assert result["subfolders"] == ["projects/web"]
         assert result["notes"] == []
+
+
+class TestGetBacklinks:
+    """Tests for get_backlinks tool."""
+
+    def test_get_backlinks(self, mock_config: Config):
+        """Test finding backlinks to a note."""
+        _create_note(path="target", title="Target", content="Target content")
+        _create_note(path="source1", title="Source 1", content="Link to [[target]]")
+        _create_note(path="source2", title="Source 2", content="Another [[target]] link")
+
+        result = _get_backlinks("target")
+
+        assert result["path"] == "target"
+        assert result["exists"] is True
+        assert len(result["backlinks"]) == 2
+        source_paths = {bl["source_path"] for bl in result["backlinks"]}
+        assert source_paths == {"source1", "source2"}
+
+    def test_get_backlinks_no_links(self, mock_config: Config):
+        """Test getting backlinks when none exist."""
+        _create_note(path="lonely", title="Lonely", content="No one links to me")
+
+        result = _get_backlinks("lonely")
+
+        assert result["path"] == "lonely"
+        assert result["exists"] is True
+        assert result["backlinks"] == []
+
+    def test_get_backlinks_nonexistent_note(self, mock_config: Config):
+        """Test getting backlinks for a non-existent note (broken links)."""
+        _create_note(path="source", title="Source", content="Link to [[nonexistent]]")
+
+        result = _get_backlinks("nonexistent")
+
+        assert result["path"] == "nonexistent"
+        assert result["exists"] is False
+        assert len(result["backlinks"]) == 1
+        assert result["backlinks"][0]["source_path"] == "source"
+
+    def test_get_backlinks_with_line_numbers(self, mock_config: Config):
+        """Test that line numbers are included in backlinks."""
+        _create_note(path="target", title="Target", content="Content")
+        _create_note(
+            path="source",
+            title="Source",
+            content="Line 1: [[target]]\nLine 2: text\nLine 3: [[target|Display]]",
+        )
+
+        result = _get_backlinks("target")
+
+        assert len(result["backlinks"]) == 1
+        bl = result["backlinks"][0]
+        assert bl["source_path"] == "source"
+        assert bl["link_count"] == 2
+        assert 1 in bl["line_numbers"]
+        assert 3 in bl["line_numbers"]
+
+    def test_delete_note_shows_backlink_warning(self, mock_config: Config):
+        """Test that deleting a note shows backlink warnings."""
+        _create_note(path="target", title="Target", content="Target content")
+        _create_note(path="source", title="Source", content="Link to [[target]]")
+
+        result = _delete_note("target")
+
+        assert "Deleted note at 'target'" in result
+        assert "Warning:" in result
+        assert "source" in result
+        assert "broken" in result

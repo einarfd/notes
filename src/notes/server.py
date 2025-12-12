@@ -5,7 +5,7 @@ from fastmcp import FastMCP
 mcp = FastMCP("notes")
 
 # Import tools to register them with the mcp instance
-from notes.tools import notes, search, tags  # noqa: F401, E402
+from notes.tools import links, notes, search, tags  # noqa: F401, E402
 
 
 def main() -> None:
