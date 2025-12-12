@@ -117,3 +117,17 @@ def test_list_by_prefix_only_subfolders(storage: FilesystemStorage):
     result = storage.list_by_prefix("projects")
     assert result["notes"] == []
     assert result["subfolders"] == ["projects/api", "projects/web"]
+
+
+def test_list_by_prefix_includes_note_at_folder_path(storage: FilesystemStorage):
+    """Test that a note at exactly the folder path is included."""
+    # "projects" is both a note AND has child notes
+    storage.save(Note(path="projects", title="Projects Overview", content=""))
+    storage.save(Note(path="projects/proj1", title="Project 1", content=""))
+    storage.save(Note(path="projects/proj2", title="Project 2", content=""))
+    storage.save(Note(path="projects/sub/proj3", title="Project 3", content=""))
+
+    result = storage.list_by_prefix("projects")
+    # Should include the note at "projects" itself, plus child notes
+    assert result["notes"] == ["projects", "projects/proj1", "projects/proj2"]
+    assert result["subfolders"] == ["projects/sub"]
