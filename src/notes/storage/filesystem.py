@@ -97,7 +97,7 @@ class FilesystemStorage(StorageBackend):
                         notes.append(p)
                     else:
                         subfolders_set.add(prefix_slash + remainder.split("/")[0])
-            # Also include note at exactly the prefix path (e.g., "projects" note when browsing projects/)
+            # Also include note at exactly the prefix path (e.g., "projects" note)
             if prefix in paths:
                 notes.append(prefix)
 
