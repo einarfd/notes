@@ -16,6 +16,7 @@ dependencies = [
 [project.scripts]
 notes = "notes.server:main"
 notes-web = "notes.web.app:main"
+notes-admin = "notes.cli:main"
 
 [build-system]
 requires = ["hatchling"]
