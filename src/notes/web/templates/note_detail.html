@@ -10,6 +10,10 @@
     {% endif %}
     <form method="POST" action="/notes/{{ note.path }}">
         <div class="form-group">
+            <label for="new_path">Path</label>
+            <input type="text" id="new_path" name="new_path" value="{{ note.path }}" required>
+        </div>
+        <div class="form-group">
             <label for="title">Title</label>
             <input type="text" id="title" name="title" value="{{ note.title }}" required>
         </div>

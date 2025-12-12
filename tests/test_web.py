@@ -362,7 +362,7 @@ class TestHTMLViews:
 
         response = client.post(
             "/notes/updateme",
-            data={"title": "Updated", "tags": "", "content": "New"},
+            data={"new_path": "updateme", "title": "Updated", "tags": "", "content": "New"},
             follow_redirects=False,
         )
 
@@ -372,6 +372,29 @@ class TestHTMLViews:
         # Verify update
         get_response = client.get("/api/notes/updateme")
         assert get_response.json()["title"] == "Updated"
+
+    def test_move_note_via_form(self, client: TestClient):
+        """Test moving a note via form submission."""
+        client.post(
+            "/api/notes", json={"path": "old/path", "title": "Movable", "content": "Content"}
+        )
+
+        response = client.post(
+            "/notes/old/path",
+            data={"new_path": "new/location", "title": "Movable", "tags": "", "content": "Content"},
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 303
+        assert response.headers["location"] == "/notes/new/location"
+
+        # Verify move
+        old_response = client.get("/api/notes/old/path")
+        assert old_response.status_code == 404
+
+        new_response = client.get("/api/notes/new/location")
+        assert new_response.status_code == 200
+        assert new_response.json()["title"] == "Movable"
 
     def test_delete_note_via_form(self, client: TestClient):
         """Test deleting a note via form submission."""

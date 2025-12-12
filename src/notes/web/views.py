@@ -168,6 +168,7 @@ def view_note(request: Request, path: str) -> HTMLResponse:
 def update_note_form(
     request: Request,
     path: str,
+    new_path: str = Form(...),
     title: str = Form(...),
     tags: str = Form(""),
     content: str = Form(""),
@@ -175,15 +176,27 @@ def update_note_form(
     """Handle edit note form submission."""
     service = _get_service()
     tag_list = [t.strip() for t in tags.split(",") if t.strip()]
+    final_path = new_path.strip()
+
+    # Determine if we're moving the note
+    move_path = final_path if final_path != path else None
+
     try:
-        service.update_note(path=path, title=title, content=content, tags=tag_list)
+        # update_note handles both content updates and moves via new_path param
+        service.update_note(
+            path=path,
+            title=title,
+            content=content,
+            tags=tag_list,
+            new_path=move_path,
+        )
     except (ValidationError, ValueError) as e:
         # Create a mock note object for re-displaying the form
         from datetime import datetime
 
         # Use raw values to avoid re-triggering validation
         mock_note = type("MockNote", (), {
-            "path": path,
+            "path": final_path,
             "title": title,
             "content": content,
             "tags": tag_list,
@@ -196,7 +209,7 @@ def update_note_form(
             context={"note": mock_note, "editing": True, "error": str(e)},
             status_code=400,
         )
-    return RedirectResponse(url=f"/notes/{path}", status_code=303)
+    return RedirectResponse(url=f"/notes/{final_path}", status_code=303)
 
 
 @router.get("/search/help", response_class=HTMLResponse)
