@@ -20,6 +20,8 @@ class SearchIndex:
         schema_builder.add_text_field("title", stored=True)
         schema_builder.add_text_field("content", stored=True)
         schema_builder.add_text_field("tags", stored=True)
+        schema_builder.add_date_field("created_at", stored=True, indexed=True)
+        schema_builder.add_date_field("updated_at", stored=True, indexed=True)
         self.schema = schema_builder.build()
 
         # Open or create index
@@ -37,6 +39,8 @@ class SearchIndex:
                 title=note.title,
                 content=note.content,
                 tags=" ".join(note.tags),
+                created_at=note.created_at,
+                updated_at=note.updated_at,
             )
         )
         writer.commit()
@@ -51,7 +55,9 @@ class SearchIndex:
         """Search for notes matching the query."""
         self.index.reload()
         searcher = self.index.searcher()
-        parsed_query = self.index.parse_query(query, ["title", "content", "tags"])
+        parsed_query = self.index.parse_query(
+            query, ["title", "content", "tags", "created_at", "updated_at"]
+        )
 
         search_result = searcher.search(parsed_query, limit=limit)
         results = []

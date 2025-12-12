@@ -1,5 +1,7 @@
 """Tests for search functionality."""
 
+from datetime import datetime
+
 from notes.models.note import Note
 from notes.search import SearchIndex
 
@@ -72,3 +74,38 @@ def test_update_note_replaces_in_index(search_index: SearchIndex):
     # Old title should not be found
     results = search_index.search("Original")
     assert len(results) == 0
+
+
+def test_search_by_date_range(search_index: SearchIndex):
+    """Test searching notes by date range."""
+    old_note = Note(
+        path="old-note",
+        title="Old Note",
+        content="Created long ago",
+        created_at=datetime(2023, 1, 15),
+        updated_at=datetime(2023, 1, 15),
+    )
+    new_note = Note(
+        path="new-note",
+        title="New Note",
+        content="Created recently",
+        created_at=datetime(2024, 6, 15),
+        updated_at=datetime(2024, 6, 15),
+    )
+
+    search_index.index_note(old_note)
+    search_index.index_note(new_note)
+
+    # Search for notes created in 2024
+    results = search_index.search("created_at:[2024-01-01T00:00:00Z TO 2024-12-31T23:59:59Z]")
+    assert len(results) == 1
+    assert results[0]["path"] == "new-note"
+
+    # Search for notes created in 2023
+    results = search_index.search("created_at:[2023-01-01T00:00:00Z TO 2023-12-31T23:59:59Z]")
+    assert len(results) == 1
+    assert results[0]["path"] == "old-note"
+
+    # Search for all notes (any date)
+    results = search_index.search("created_at:[2020-01-01T00:00:00Z TO *]")
+    assert len(results) == 2
