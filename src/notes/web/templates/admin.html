@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Admin - Notes{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Administration</h2>
+
+    <div class="admin-section">
+        <h3>Rebuild Indexes</h3>
+        <p>Rebuild the search index and backlinks index from all stored notes.</p>
+        <p class="metadata">Use this if indexes are out of sync or corrupted.</p>
+
+        <form method="post" action="/admin/rebuild">
+            <button type="submit" class="btn">Rebuild All Indexes</button>
+        </form>
+
+        {% if result %}
+        <div class="success-message" style="margin-top: 15px; padding: 15px; background: #e0ffe0; border: 1px solid #00aa00; border-radius: 4px;">
+            <strong>Rebuild complete!</strong><br>
+            Processed {{ result.notes_processed }} notes.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -5,6 +5,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
+from notes.web.admin import router as admin_router
 from notes.web.routes import router as api_router
 from notes.web.views import router as views_router
 
@@ -21,6 +22,7 @@ app.mount("/static", StaticFiles(directory=static_dir), name="static")
 # Include routers
 app.include_router(api_router)
 app.include_router(views_router)
+app.include_router(admin_router)
 
 
 @app.get("/health")

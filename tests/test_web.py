@@ -20,6 +20,7 @@ def client(config: Config):
     with (
         patch("notes.web.routes._get_service", make_test_service),
         patch("notes.web.views._get_service", make_test_service),
+        patch("notes.web.admin._get_service", make_test_service),
     ):
         yield TestClient(app)
 
@@ -498,3 +499,43 @@ class TestHTMLViews:
 
         assert response.status_code == 200
         assert "No contents in this folder" in response.text
+
+
+class TestAdminViews:
+    """Tests for admin page."""
+
+    def test_admin_page(self, client: TestClient):
+        """Test the admin page returns HTML."""
+        response = client.get("/admin")
+
+        assert response.status_code == 200
+        assert "text/html" in response.headers["content-type"]
+        assert "Administration" in response.text
+        assert "Rebuild" in response.text
+
+    def test_admin_rebuild_empty(self, client: TestClient):
+        """Test rebuilding indexes when no notes exist."""
+        response = client.post("/admin/rebuild")
+
+        assert response.status_code == 200
+        assert "Rebuild complete" in response.text
+        assert "0 notes" in response.text
+
+    def test_admin_rebuild_with_notes(self, client: TestClient):
+        """Test rebuilding indexes with notes."""
+        client.post("/api/notes", json={"path": "note1", "title": "Note 1", "content": ""})
+        client.post("/api/notes", json={"path": "note2", "title": "Note 2", "content": ""})
+        client.post("/api/notes", json={"path": "note3", "title": "Note 3", "content": ""})
+
+        response = client.post("/admin/rebuild")
+
+        assert response.status_code == 200
+        assert "Rebuild complete" in response.text
+        assert "3 notes" in response.text
+
+    def test_admin_link_in_nav(self, client: TestClient):
+        """Test that admin link appears in navigation."""
+        response = client.get("/")
+
+        assert response.status_code == 200
+        assert 'href="/admin"' in response.text
