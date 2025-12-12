@@ -74,7 +74,7 @@ class BacklinksIndex:
         }
         self.index_path.write_text(json.dumps(data, indent=2))
 
-    def update_note_links(self, source_path: str, links: list["WikiLink"]) -> None:
+    def update_note_links(self, source_path: str, links: list[WikiLink]) -> None:
         """Update the index when a note's links change.
 
         This removes all old links from source_path and adds the new ones.

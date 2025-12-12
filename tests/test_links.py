@@ -1,6 +1,6 @@
 """Tests for wiki link parser."""
 
-from notes.links.parser import WikiLink, extract_links, replace_link_target
+from notes.links.parser import extract_links, replace_link_target
 
 
 class TestExtractLinks:

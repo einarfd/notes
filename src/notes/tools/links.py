@@ -9,7 +9,7 @@ def _get_service() -> NoteService:
 
 
 @mcp.tool()
-def get_backlinks(path: str) -> dict:
+def get_backlinks(path: str) -> dict[str, object]:
     """Find all notes that link to a given note path.
 
     Works even for non-existent paths, which is useful for finding broken links.
