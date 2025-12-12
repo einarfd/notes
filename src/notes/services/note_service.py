@@ -4,10 +4,19 @@ from dataclasses import dataclass, field
 from datetime import datetime
 
 from notes.config import Config, get_config
-from notes.links import BacklinkInfo, BacklinksIndex, extract_links
+from notes.links import BacklinkInfo, BacklinksIndex, extract_links, replace_link_target
 from notes.models import Note
 from notes.search import SearchIndex
 from notes.storage import FilesystemStorage
+
+
+@dataclass
+class UpdateResult:
+    """Result of an update operation."""
+
+    note: Note
+    backlinks_updated: list[str] = field(default_factory=list)
+    backlinks_warning: list[BacklinkInfo] = field(default_factory=list)
 
 
 @dataclass
@@ -108,7 +117,9 @@ class NoteService:
         title: str | None = None,
         content: str | None = None,
         tags: list[str] | None = None,
-    ) -> Note | None:
+        new_path: str | None = None,
+        update_backlinks: bool = True,
+    ) -> UpdateResult | None:
         """Update an existing note.
 
         Args:
@@ -116,9 +127,14 @@ class NoteService:
             title: New title (optional)
             content: New content (optional)
             tags: New tags (optional)
+            new_path: New path to move the note to (optional)
+            update_backlinks: If moving, whether to update links in other notes (default True)
 
         Returns:
-            The updated Note object, or None if not found
+            UpdateResult with the note and backlink info, or None if not found
+
+        Raises:
+            ValueError: If new_path already exists
         """
         note = self.storage.load(path)
         if note is None:
@@ -133,15 +149,66 @@ class NoteService:
 
         note.updated_at = datetime.now()
 
-        self.storage.save(note)
-        self.index.index_note(note)
+        backlinks_updated: list[str] = []
+        backlinks_warning: list[BacklinkInfo] = []
 
-        # Update wiki links index if content changed
-        if content is not None:
+        # Handle move (new_path)
+        if new_path is not None and new_path != path:
+            # Check that destination doesn't exist
+            if self.storage.load(new_path) is not None:
+                raise ValueError(f"Note already exists at '{new_path}'")
+
+            # Get backlinks to the old path
+            incoming_backlinks = self.backlinks.get_backlinks(path)
+
+            if update_backlinks and incoming_backlinks:
+                # Update content in all linking notes
+                for bl in incoming_backlinks:
+                    source_note = self.storage.load(bl.source_path)
+                    if source_note is not None:
+                        new_content = replace_link_target(
+                            source_note.content, path, new_path
+                        )
+                        if new_content != source_note.content:
+                            source_note.content = new_content
+                            source_note.updated_at = datetime.now()
+                            self.storage.save(source_note)
+                            # Update the source note's links in the index
+                            links = extract_links(source_note.content)
+                            self.backlinks.update_note_links(bl.source_path, links)
+                            backlinks_updated.append(bl.source_path)
+            elif incoming_backlinks:
+                # Don't update, but warn about broken links
+                backlinks_warning = incoming_backlinks
+
+            # Delete old file and update indexes
+            self.storage.delete(path)
+            self.index.remove_note(path)
+            self.backlinks.remove_note(path)
+
+            # Update note path and save to new location
+            note.path = new_path
+            self.storage.save(note)
+            self.index.index_note(note)
+
+            # Update backlinks index to point to new path
             links = extract_links(note.content)
-            self.backlinks.update_note_links(path, links)
+            self.backlinks.update_note_links(new_path, links)
+        else:
+            # No move - just save in place
+            self.storage.save(note)
+            self.index.index_note(note)
 
-        return note
+            # Update wiki links index if content changed
+            if content is not None:
+                links = extract_links(note.content)
+                self.backlinks.update_note_links(path, links)
+
+        return UpdateResult(
+            note=note,
+            backlinks_updated=backlinks_updated,
+            backlinks_warning=backlinks_warning,
+        )
 
     def delete_note(self, path: str) -> DeleteResult:
         """Delete a note.

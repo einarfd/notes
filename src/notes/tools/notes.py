@@ -67,6 +67,8 @@ def update_note(
     title: str | None = None,
     content: str | None = None,
     tags: list[str] | None = None,
+    new_path: str | None = None,
+    update_backlinks: bool = True,
 ) -> str:
     """Update an existing note.
 
@@ -75,23 +77,57 @@ def update_note(
         title: New title (optional, keeps existing if not provided)
         content: New content (optional, keeps existing if not provided)
         tags: New tags (optional, keeps existing if not provided)
+        new_path: New path to move the note to (optional)
+        update_backlinks: If moving, whether to update links in other notes (default True)
 
     Returns:
-        Confirmation message
+        Confirmation message with move and backlink info if applicable
 
     Raises:
-        ToolError: If note not found or validation error
+        ToolError: If note not found, destination exists, or validation error
     """
     service = _get_service()
     try:
-        note = service.update_note(path=path, title=title, content=content, tags=tags)
+        result = service.update_note(
+            path=path,
+            title=title,
+            content=content,
+            tags=tags,
+            new_path=new_path,
+            update_backlinks=update_backlinks,
+        )
     except (ValidationError, ValueError) as e:
         raise ToolError(f"Error updating note: {e}") from e
 
-    if note is None:
+    if result is None:
         raise ToolError(f"Note not found: '{path}'")
 
-    return f"Updated note at '{path}'"
+    # Build response message
+    final_path = result.note.path
+    if new_path is not None and new_path != path:
+        messages = [f"Moved note from '{path}' to '{final_path}'"]
+
+        if result.backlinks_updated:
+            messages.append(
+                f"\nUpdated links in {len(result.backlinks_updated)} notes:"
+            )
+            for source_path in result.backlinks_updated:
+                messages.append(f"- {source_path}")
+
+        if result.backlinks_warning:
+            messages.append(
+                f"\nWarning: {len(result.backlinks_warning)} notes have links "
+                "that are now broken:"
+            )
+            for bl in result.backlinks_warning:
+                messages.append(f"- {bl.source_path} ({bl.link_count} links)")
+            messages.append(
+                "\nThese links were not modified. Update or remove them manually if desired."
+            )
+
+        return "\n".join(messages)
+
+    return f"Updated note at '{final_path}'"
 
 
 @mcp.tool()

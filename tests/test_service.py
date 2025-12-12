@@ -66,18 +66,18 @@ class TestNoteServiceUpdate:
         service = NoteService(config)
         service.create_note(path="updatable", title="Original", content="Content")
 
-        updated = service.update_note("updatable", title="Updated")
+        result = service.update_note("updatable", title="Updated")
 
-        assert updated is not None
-        assert updated.title == "Updated"
+        assert result is not None
+        assert result.note.title == "Updated"
 
     def test_update_note_not_found(self, config: Config):
         """Test updating a nonexistent note."""
         service = NoteService(config)
 
-        updated = service.update_note("nonexistent", title="New")
+        result = service.update_note("nonexistent", title="New")
 
-        assert updated is None
+        assert result is None
 
 
 class TestNoteServiceDelete:
@@ -244,6 +244,118 @@ class TestNoteServiceListInFolder:
         result = service.list_notes_in_folder("nonexistent")
 
         assert result == {"notes": [], "subfolders": []}
+
+
+class TestNoteServiceMove:
+    """Tests for NoteService.update_note with new_path (moving notes)."""
+
+    def test_move_note(self, config: Config):
+        """Test moving a note to a new path."""
+        service = NoteService(config)
+        service.create_note(path="old/path", title="Note", content="Content")
+
+        result = service.update_note("old/path", new_path="new/path")
+
+        assert result is not None
+        assert result.note.path == "new/path"
+        assert service.read_note("old/path") is None
+        assert service.read_note("new/path") is not None
+
+    def test_move_note_updates_backlinks(self, config: Config):
+        """Test that moving a note updates links in other notes."""
+        service = NoteService(config)
+        service.create_note(path="target", title="Target", content="Target content")
+        service.create_note(path="source", title="Source", content="Link to [[target]]")
+
+        result = service.update_note("target", new_path="moved/target", update_backlinks=True)
+
+        assert result is not None
+        assert result.backlinks_updated == ["source"]
+        assert result.backlinks_warning == []
+
+        # Check that source note was updated
+        source = service.read_note("source")
+        assert source is not None
+        assert "[[moved/target]]" in source.content
+        assert "[[target]]" not in source.content
+
+    def test_move_note_updates_backlinks_preserves_display_text(self, config: Config):
+        """Test that moving preserves display text in links."""
+        service = NoteService(config)
+        service.create_note(path="target", title="Target", content="Content")
+        service.create_note(path="source", title="Source", content="Link to [[target|My Target]]")
+
+        service.update_note("target", new_path="moved", update_backlinks=True)
+
+        source = service.read_note("source")
+        assert source is not None
+        assert "[[moved|My Target]]" in source.content
+
+    def test_move_note_warns_without_update(self, config: Config):
+        """Test that moving without update_backlinks warns about broken links."""
+        service = NoteService(config)
+        service.create_note(path="target", title="Target", content="Content")
+        service.create_note(path="source", title="Source", content="Link to [[target]]")
+
+        result = service.update_note("target", new_path="moved", update_backlinks=False)
+
+        assert result is not None
+        assert result.backlinks_updated == []
+        assert len(result.backlinks_warning) == 1
+        assert result.backlinks_warning[0].source_path == "source"
+
+        # Check that source was NOT updated
+        source = service.read_note("source")
+        assert source is not None
+        assert "[[target]]" in source.content
+
+    def test_move_note_to_existing_path_raises(self, config: Config):
+        """Test that moving to an existing path raises ValueError."""
+        import pytest
+
+        service = NoteService(config)
+        service.create_note(path="note1", title="Note 1", content="Content")
+        service.create_note(path="note2", title="Note 2", content="Content")
+
+        with pytest.raises(ValueError, match="Note already exists at 'note2'"):
+            service.update_note("note1", new_path="note2")
+
+    def test_move_note_same_path_no_op(self, config: Config):
+        """Test that moving to the same path is a no-op."""
+        service = NoteService(config)
+        service.create_note(path="note", title="Note", content="Content")
+
+        result = service.update_note("note", new_path="note")
+
+        assert result is not None
+        assert result.note.path == "note"
+        assert result.backlinks_updated == []
+        assert result.backlinks_warning == []
+
+    def test_move_note_updates_search_index(self, config: Config):
+        """Test that moving a note updates the search index."""
+        service = NoteService(config)
+        service.create_note(path="old", title="Searchable", content="Find me")
+
+        service.update_note("old", new_path="new")
+
+        # Search should find it at new path
+        results = service.search_notes("Searchable")
+        assert len(results) == 1
+        assert results[0]["path"] == "new"
+
+    def test_move_note_updates_backlinks_index(self, config: Config):
+        """Test that moving a note updates the backlinks index for its outgoing links."""
+        service = NoteService(config)
+        service.create_note(path="target", title="Target", content="Target")
+        service.create_note(path="source", title="Source", content="Link to [[target]]")
+
+        service.update_note("source", new_path="moved-source")
+
+        # Backlinks to target should now show moved-source
+        backlinks = service.get_backlinks("target")
+        assert len(backlinks) == 1
+        assert backlinks[0].source_path == "moved-source"
 
 
 class TestNoteServiceBacklinks:

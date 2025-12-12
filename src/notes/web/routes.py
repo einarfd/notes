@@ -119,7 +119,7 @@ def update_note(path: str, body: NoteUpdate) -> NoteResponse:
     """Update an existing note."""
     service = _get_service()
     try:
-        note = service.update_note(
+        result = service.update_note(
             path=path,
             title=body.title,
             content=body.content,
@@ -128,9 +128,10 @@ def update_note(path: str, body: NoteUpdate) -> NoteResponse:
     except (ValidationError, ValueError) as e:
         raise HTTPException(status_code=400, detail=str(e)) from None
 
-    if note is None:
+    if result is None:
         raise HTTPException(status_code=404, detail=f"Note not found: {path}")
 
+    note = result.note
     return NoteResponse(
         path=note.path,
         title=note.title,

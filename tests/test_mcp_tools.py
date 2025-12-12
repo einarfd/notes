@@ -113,6 +113,57 @@ class TestUpdateNote:
         with pytest.raises(ToolError, match="Note not found: 'nonexistent'"):
             _update_note("nonexistent", title="New Title")
 
+    def test_update_note_move(self, mock_config: Config):
+        """Test moving a note to a new path."""
+        _create_note(path="original", title="Note", content="Content")
+
+        result = _update_note("original", new_path="moved")
+
+        assert "Moved note from 'original' to 'moved'" in result
+        with pytest.raises(ToolError, match="Note not found"):
+            _read_note("original")
+        note = _read_note("moved")
+        assert note["title"] == "Note"
+
+    def test_update_note_move_with_backlink_updates(self, mock_config: Config):
+        """Test moving a note updates backlinks in other notes."""
+        _create_note(path="target", title="Target", content="Target content")
+        _create_note(path="source", title="Source", content="Link to [[target]]")
+
+        result = _update_note("target", new_path="new-target", update_backlinks=True)
+
+        assert "Moved note from 'target' to 'new-target'" in result
+        assert "Updated links in 1 notes" in result
+        assert "source" in result
+
+        # Verify the source was updated
+        source = _read_note("source")
+        assert "[[new-target]]" in source["content"]
+
+    def test_update_note_move_without_backlink_updates(self, mock_config: Config):
+        """Test moving a note without updating backlinks shows warning."""
+        _create_note(path="target", title="Target", content="Content")
+        _create_note(path="source", title="Source", content="Link to [[target]]")
+
+        result = _update_note("target", new_path="new-target", update_backlinks=False)
+
+        assert "Moved note from 'target' to 'new-target'" in result
+        assert "Warning:" in result
+        assert "source" in result
+        assert "broken" in result
+
+        # Verify the source was NOT updated
+        source = _read_note("source")
+        assert "[[target]]" in source["content"]
+
+    def test_update_note_move_to_existing_raises(self, mock_config: Config):
+        """Test moving to an existing path raises ToolError."""
+        _create_note(path="note1", title="Note 1", content="Content")
+        _create_note(path="note2", title="Note 2", content="Content")
+
+        with pytest.raises(ToolError, match="Note already exists at 'note2'"):
+            _update_note("note1", new_path="note2")
+
 
 class TestDeleteNote:
     """Tests for delete_note tool."""
