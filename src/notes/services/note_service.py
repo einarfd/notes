@@ -1,11 +1,21 @@
 """Note service - business logic layer."""
 
+from dataclasses import dataclass, field
 from datetime import datetime
 
 from notes.config import Config, get_config
+from notes.links import BacklinkInfo, BacklinksIndex, extract_links
 from notes.models import Note
 from notes.search import SearchIndex
 from notes.storage import FilesystemStorage
+
+
+@dataclass
+class DeleteResult:
+    """Result of a delete operation."""
+
+    deleted: bool
+    backlinks_warning: list[BacklinkInfo] = field(default_factory=list)
 
 
 class NoteService:
@@ -25,6 +35,7 @@ class NoteService:
         self._config.ensure_dirs()
         self._storage: FilesystemStorage | None = None
         self._index: SearchIndex | None = None
+        self._backlinks: BacklinksIndex | None = None
 
     @property
     def storage(self) -> FilesystemStorage:
@@ -39,6 +50,13 @@ class NoteService:
         if self._index is None:
             self._index = SearchIndex(self._config.index_dir)
         return self._index
+
+    @property
+    def backlinks(self) -> BacklinksIndex:
+        """Get the backlinks index (lazily initialized)."""
+        if self._backlinks is None:
+            self._backlinks = BacklinksIndex(self._config.index_dir / "backlinks.json")
+        return self._backlinks
 
     def create_note(
         self,
@@ -66,6 +84,11 @@ class NoteService:
         )
         self.storage.save(note)
         self.index.index_note(note)
+
+        # Index wiki links
+        links = extract_links(content)
+        self.backlinks.update_note_links(path, links)
+
         return note
 
     def read_note(self, path: str) -> Note | None:
@@ -112,21 +135,31 @@ class NoteService:
 
         self.storage.save(note)
         self.index.index_note(note)
+
+        # Update wiki links index if content changed
+        if content is not None:
+            links = extract_links(note.content)
+            self.backlinks.update_note_links(path, links)
+
         return note
 
-    def delete_note(self, path: str) -> bool:
+    def delete_note(self, path: str) -> DeleteResult:
         """Delete a note.
 
         Args:
             path: The path/identifier of the note
 
         Returns:
-            True if deleted, False if not found
+            DeleteResult with deleted status and backlink warnings
         """
+        # Get backlinks before deletion to warn about broken links
+        backlinks_warning = self.backlinks.get_backlinks(path)
+
         if self.storage.delete(path):
             self.index.remove_note(path)
-            return True
-        return False
+            self.backlinks.remove_note(path)
+            return DeleteResult(deleted=True, backlinks_warning=backlinks_warning)
+        return DeleteResult(deleted=False)
 
     def list_notes(self) -> list[str]:
         """List all note paths.
@@ -188,3 +221,16 @@ class NoteService:
             if note and tag in note.tags:
                 matching_notes.append(note)
         return matching_notes
+
+    def get_backlinks(self, path: str) -> list[BacklinkInfo]:
+        """Get all notes that link to the given path.
+
+        Works even for non-existent paths (to find broken links).
+
+        Args:
+            path: The path to find backlinks for
+
+        Returns:
+            List of BacklinkInfo objects with source_path and line_numbers
+        """
+        return self.backlinks.get_backlinks(path)

@@ -90,7 +90,7 @@ class TestNoteServiceDelete:
 
         result = service.delete_note("deletable")
 
-        assert result is True
+        assert result.deleted is True
         assert service.read_note("deletable") is None
 
     def test_delete_note_not_found(self, config: Config):
@@ -99,7 +99,19 @@ class TestNoteServiceDelete:
 
         result = service.delete_note("nonexistent")
 
-        assert result is False
+        assert result.deleted is False
+
+    def test_delete_note_warns_about_backlinks(self, config: Config):
+        """Test deleting a note that has backlinks warns about broken links."""
+        service = NoteService(config)
+        service.create_note(path="target", title="Target", content="Content")
+        service.create_note(path="source", title="Source", content="Link to [[target]]")
+
+        result = service.delete_note("target")
+
+        assert result.deleted is True
+        assert len(result.backlinks_warning) == 1
+        assert result.backlinks_warning[0].source_path == "source"
 
 
 class TestNoteServiceList:
@@ -232,3 +244,75 @@ class TestNoteServiceListInFolder:
         result = service.list_notes_in_folder("nonexistent")
 
         assert result == {"notes": [], "subfolders": []}
+
+
+class TestNoteServiceBacklinks:
+    """Tests for NoteService backlinks functionality."""
+
+    def test_create_note_indexes_links(self, config: Config):
+        """Test that creating a note indexes its wiki links."""
+        service = NoteService(config)
+        service.create_note(path="target", title="Target", content="Target content")
+        service.create_note(path="source", title="Source", content="Link to [[target]]")
+
+        backlinks = service.get_backlinks("target")
+
+        assert len(backlinks) == 1
+        assert backlinks[0].source_path == "source"
+
+    def test_update_note_updates_links(self, config: Config):
+        """Test that updating note content updates the links index."""
+        service = NoteService(config)
+        service.create_note(path="target-a", title="Target A", content="A")
+        service.create_note(path="target-b", title="Target B", content="B")
+        service.create_note(path="source", title="Source", content="Link to [[target-a]]")
+
+        # Verify initial state
+        assert len(service.get_backlinks("target-a")) == 1
+        assert len(service.get_backlinks("target-b")) == 0
+
+        # Update to link to target-b instead
+        service.update_note("source", content="Link to [[target-b]]")
+
+        # Old link should be gone, new link should exist
+        assert len(service.get_backlinks("target-a")) == 0
+        assert len(service.get_backlinks("target-b")) == 1
+
+    def test_get_backlinks_nonexistent_path(self, config: Config):
+        """Test getting backlinks for a non-existent path (broken links)."""
+        service = NoteService(config)
+        service.create_note(path="source", title="Source", content="Link to [[nonexistent]]")
+
+        backlinks = service.get_backlinks("nonexistent")
+
+        assert len(backlinks) == 1
+        assert backlinks[0].source_path == "source"
+
+    def test_get_backlinks_empty(self, config: Config):
+        """Test getting backlinks when none exist."""
+        service = NoteService(config)
+        service.create_note(path="lonely", title="Lonely", content="No one links to me")
+
+        backlinks = service.get_backlinks("lonely")
+
+        assert backlinks == []
+
+    def test_multiple_links_tracked(self, config: Config):
+        """Test that multiple links from the same note are tracked."""
+        service = NoteService(config)
+        service.create_note(path="target", title="Target", content="Target")
+        service.create_note(
+            path="source",
+            title="Source",
+            content="Line 1: [[target]]\nLine 3: [[target|Display]]",
+        )
+
+        backlinks = service.get_backlinks("target")
+
+        assert len(backlinks) == 1
+        assert backlinks[0].source_path == "source"
+        assert backlinks[0].link_count == 2
+        assert 1 in backlinks[0].line_numbers
+        # Line 2 would be the blank line, so second link is on line 2 (after split)
+        # Actually, "Line 1: [[target]]\nLine 3: [[target|Display]]" has 2 lines
+        assert 2 in backlinks[0].line_numbers

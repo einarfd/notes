@@ -145,8 +145,9 @@ def update_note(path: str, body: NoteUpdate) -> NoteResponse:
 def delete_note(path: str) -> None:
     """Delete a note."""
     service = _get_service()
+    result = service.delete_note(path)
 
-    if not service.delete_note(path):
+    if not result.deleted:
         raise HTTPException(status_code=404, detail=f"Note not found: {path}")
 
 

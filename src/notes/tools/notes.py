@@ -102,17 +102,31 @@ def delete_note(path: str) -> str:
         path: The path/identifier of the note to delete
 
     Returns:
-        Confirmation message
+        Confirmation message with backlink warnings if applicable
 
     Raises:
         ToolError: If note not found
     """
     service = _get_service()
+    result = service.delete_note(path)
 
-    if service.delete_note(path):
-        return f"Deleted note at '{path}'"
+    if not result.deleted:
+        raise ToolError(f"Note not found: '{path}'")
 
-    raise ToolError(f"Note not found: '{path}'")
+    messages = [f"Deleted note at '{path}'"]
+
+    if result.backlinks_warning:
+        messages.append(
+            f"\nWarning: {len(result.backlinks_warning)} notes have links "
+            "that are now broken:"
+        )
+        for bl in result.backlinks_warning:
+            messages.append(f"- {bl.source_path} ({bl.link_count} links)")
+        messages.append(
+            "\nThese links were not modified. Update or remove them manually if desired."
+        )
+
+    return "\n".join(messages)
 
 
 @mcp.tool()
