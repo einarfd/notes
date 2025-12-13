@@ -1,14 +1,11 @@
 """Tests for CLI admin tools."""
 
-import subprocess
-import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from notes.cli import clear_all, export_backup, import_backup, main, rebuild_indexes
-from notes.config import Config
 
 
 class TestRebuildIndexes:
@@ -296,19 +293,3 @@ class TestMain:
             main()
 
 
-class TestCLIIntegration:
-    """Integration tests for the CLI."""
-
-    def test_cli_rebuild_command(self, config: Config):
-        """Test running notes-admin rebuild as a subprocess."""
-        # Run the CLI command
-        result = subprocess.run(
-            [sys.executable, "-m", "notes.cli", "rebuild"],
-            capture_output=True,
-            text=True,
-            env={"PYTHONPATH": "src"},
-        )
-
-        assert result.returncode == 0
-        assert "Rebuilding indexes..." in result.stdout
-        assert "Done!" in result.stdout

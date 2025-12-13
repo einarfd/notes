@@ -255,3 +255,43 @@ class TestSearchIndexRebuild:
 
         assert count == 0
         assert len(search_index.search("Note")) == 0
+
+
+def test_tag_exact_match_with_hyphen(search_index: SearchIndex):
+    """Tags with hyphens are matched exactly, not split."""
+    note = Note(
+        path="ml-note",
+        title="ML Guide",
+        content="General content",
+        tags=["machine-learning", "python"],
+    )
+    search_index.index_note(note)
+
+    # Exact tag match should work
+    results = search_index.search("tags:machine-learning")
+    assert len(results) == 1
+
+    # Partial match should NOT work (raw tokenizer)
+    results = search_index.search("tags:machine")
+    assert len(results) == 0
+
+
+def test_title_boost_ranks_higher(search_index: SearchIndex):
+    """Notes with search term in title rank higher than content-only."""
+    content_note = Note(
+        path="content-match",
+        title="Programming Guide",
+        content="Learn python programming.",
+    )
+    title_note = Note(
+        path="title-match",
+        title="Python Tutorial",
+        content="Learn programming basics.",
+    )
+    search_index.index_note(content_note)
+    search_index.index_note(title_note)
+
+    results = search_index.search("python")
+    assert len(results) == 2
+    # Title match should rank first due to 2.0x boost
+    assert results[0]["path"] == "title-match"

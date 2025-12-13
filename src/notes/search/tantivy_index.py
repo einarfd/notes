@@ -1,6 +1,7 @@
 """Tantivy-based full-text search index."""
 
 import re
+import shutil
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -87,13 +88,22 @@ class SearchIndex:
         schema_builder.add_text_field("path", stored=True, tokenizer_name="raw")
         schema_builder.add_text_field("title", stored=True)
         schema_builder.add_text_field("content", stored=True)
-        schema_builder.add_text_field("tags", stored=True)
+        schema_builder.add_text_field("tags", stored=True, tokenizer_name="raw")
         schema_builder.add_date_field("created_at", stored=True, indexed=True)
         schema_builder.add_date_field("updated_at", stored=True, indexed=True)
         self.schema = schema_builder.build()
 
-        # Open or create index
-        self.index = tantivy.Index(self.schema, path=str(self.index_dir))
+        # Open or create index (handle schema mismatch by recreating)
+        try:
+            self.index = tantivy.Index(self.schema, path=str(self.index_dir))
+        except ValueError as e:
+            if "schema" in str(e).lower():
+                # Schema changed - delete old index and recreate
+                shutil.rmtree(self.index_dir)
+                self.index_dir.mkdir(parents=True, exist_ok=True)
+                self.index = tantivy.Index(self.schema, path=str(self.index_dir))
+            else:
+                raise
 
     def index_note(self, note: Note) -> None:
         """Add or update a note in the index."""
@@ -106,7 +116,7 @@ class SearchIndex:
                 path=note.path,
                 title=note.title,
                 content=note.content,
-                tags=" ".join(note.tags),
+                tags=note.tags,  # Multi-value field: each tag indexed separately
                 created_at=note.created_at,
                 updated_at=note.updated_at,
             )
@@ -145,8 +155,12 @@ class SearchIndex:
         searcher = self.index.searcher()
         # Preprocess date math expressions (now, now-7d, 2024-01-01+1M, etc.)
         processed_query = _preprocess_date_math(query)
+        # Field boosting: title > tags > content
+        # Date fields still searchable via explicit syntax (e.g., created_at:[now-7d TO now])
         parsed_query = self.index.parse_query(
-            processed_query, ["title", "content", "tags", "created_at", "updated_at"]
+            processed_query,
+            default_field_names=["title", "content", "tags"],
+            field_boosts={"title": 2.0, "tags": 1.5, "content": 1.0},
         )
 
         search_result = searcher.search(parsed_query, limit=limit)

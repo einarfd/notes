@@ -11,7 +11,7 @@
 
 ## Phase 2: Search & Discovery
 
-- [ ] Improve search with better ranking
+- [x] Improve search with better ranking (field boosting, raw tokenizer for tags)
 - [x] Add tag-based filtering
 - [x] Implement path-based navigation (list notes in folder)
 - [x] Add search by date range (with date math: now-7d, 2024-01-01+1M)
@@ -38,7 +38,7 @@
 - [ ] Implement logging
 - [ ] Add user configuration file support
 - [x] Write user documentation (README with MCP client setup)
-- [ ] Add backup/export functionality
+- [x] Add backup/export functionality (CLI and Web UI)
 
 ## Backlog / Ideas
 
