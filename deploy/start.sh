@@ -11,6 +11,37 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
+# Handle --restart flag
+if [[ "${1:-}" == "--restart" || "${1:-}" == "-r" ]]; then
+    echo "Stopping existing services first..."
+    "$SCRIPT_DIR/stop.sh" 2>/dev/null || true
+    echo
+fi
+
+# Check if port is in use
+port_in_use() {
+    local port=$1
+    if command -v ss &> /dev/null; then
+        ss -tuln 2>/dev/null | grep -q ":$port "
+    elif command -v netstat &> /dev/null; then
+        netstat -tuln 2>/dev/null | grep -q ":$port "
+    else
+        # Fallback: try to connect
+        (echo >/dev/tcp/127.0.0.1/$port) 2>/dev/null
+    fi
+}
+
+check_port_available() {
+    local name=$1
+    local port=$2
+    if port_in_use "$port"; then
+        echo -e "${RED}Error: Port $port is already in use ($name)${NC}"
+        echo "  Run ./stop.sh first, or use: ./start.sh --restart"
+        return 1
+    fi
+    return 0
+}
+
 # Load config
 if [[ ! -f "$SCRIPT_DIR/config.env" ]]; then
     echo -e "${RED}Error: config.env not found${NC}"
@@ -57,6 +88,14 @@ if [[ ! -f "$SCRIPT_DIR/Caddyfile" ]]; then
     echo "Run setup first: ./setup-tailscale.sh"
     exit 1
 fi
+
+# Check ports are available before starting
+echo "Checking port availability..."
+check_port_available "MCP server" "$MCP_PORT" || exit 1
+check_port_available "Web server" "$WEB_PORT" || exit 1
+check_port_available "Caddy admin" "2019" || exit 1
+echo -e "${GREEN}All ports available${NC}"
+echo
 
 # Start MCP HTTP server
 echo "Starting MCP HTTP server on port $MCP_PORT..."
@@ -117,8 +156,8 @@ echo "========================================"
 echo -e "${GREEN}All services started!${NC}"
 echo "========================================"
 
-# Extract hostname from Caddyfile and display URLs
-SERVICE_HOST=$(grep -m1 '\.ts\.net\|\.com\|\.net\|\.org' "$SCRIPT_DIR/Caddyfile" | sed 's/[[:space:]].*$//' | tr -d ' ')
+# Extract hostname from Caddyfile comment
+SERVICE_HOST=$(grep '^# Hostname:' "$SCRIPT_DIR/Caddyfile" | sed 's/^# Hostname: *//')
 if [[ -n "$SERVICE_HOST" ]]; then
     echo
     echo "Service URLs:"
