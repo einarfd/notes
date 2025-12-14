@@ -44,6 +44,22 @@ MODE="${MODE:-tailscale}"
 if command -v caddy &> /dev/null; then
     version=$(caddy version 2>/dev/null | head -1 || echo "unknown")
     log_ok "Caddy installed ($version)"
+
+    # Check if Caddy can bind to privileged ports (if needed)
+    HTTPS_PORT="${HTTPS_PORT:-443}"
+    if [[ "$HTTPS_PORT" -lt 1024 ]]; then
+        caddy_path=$(which caddy)
+        if command -v getcap &> /dev/null; then
+            if getcap "$caddy_path" 2>/dev/null | grep -q 'cap_net_bind_service'; then
+                log_ok "Caddy can bind to port $HTTPS_PORT"
+            else
+                log_warn "Caddy may not be able to bind to port $HTTPS_PORT"
+                echo "  Fix with: sudo setcap 'cap_net_bind_service=+ep' $caddy_path"
+            fi
+        else
+            log_warn "Cannot check Caddy capabilities (getcap not found)"
+        fi
+    fi
 else
     log_error "Caddy not found"
     echo "  Install: https://caddyserver.com/docs/install"
