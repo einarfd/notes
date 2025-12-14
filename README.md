@@ -28,7 +28,7 @@ Run the web interface for browsing and editing notes:
 uv run notes-web
 ```
 
-Opens at http://localhost:8000 with:
+Opens at http://localhost:3000 with:
 - Browse and search notes
 - Create, edit, and delete notes
 - Tag-based organization

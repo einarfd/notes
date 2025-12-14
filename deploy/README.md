@@ -53,7 +53,7 @@ MODE=tailscale
 
 # Service ports (internal)
 MCP_PORT=8080
-WEB_PORT=8000
+WEB_PORT=3000
 
 # HTTPS port (use 443 for standard, or higher if not root)
 HTTPS_PORT=443
@@ -158,7 +158,7 @@ For a VPS with a real domain:
            reverse_proxy localhost:8080
        }
        handle {
-           reverse_proxy localhost:8000
+           reverse_proxy localhost:3000
        }
    }
    ```

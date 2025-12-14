@@ -51,7 +51,7 @@ source "$SCRIPT_DIR/config.env"
 
 # Defaults
 MCP_PORT="${MCP_PORT:-8080}"
-WEB_PORT="${WEB_PORT:-8000}"
+WEB_PORT="${WEB_PORT:-3000}"
 PID_DIR="$SCRIPT_DIR/pids"
 LOG_DIR="$SCRIPT_DIR/logs"
 

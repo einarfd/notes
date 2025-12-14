@@ -21,7 +21,7 @@ source "$SCRIPT_DIR/config.env"
 # Defaults
 CERT_DIR="${CERT_DIR:-$SCRIPT_DIR/certs}"
 MCP_PORT="${MCP_PORT:-8080}"
-WEB_PORT="${WEB_PORT:-8000}"
+WEB_PORT="${WEB_PORT:-3000}"
 HTTPS_PORT="${HTTPS_PORT:-443}"
 
 # Get Tailscale hostname

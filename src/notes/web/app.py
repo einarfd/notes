@@ -39,7 +39,7 @@ def main() -> None:
 
     parser = argparse.ArgumentParser(description="Run the Notes web server")
     parser.add_argument("--host", default="0.0.0.0", help="Host to bind to (default: 0.0.0.0)")
-    parser.add_argument("--port", type=int, default=8000, help="Port to bind to (default: 8000)")
+    parser.add_argument("--port", type=int, default=3000, help="Port to bind to (default: 3000)")
     parser.add_argument("--no-reload", action="store_true", help="Disable auto-reload")
     args = parser.parse_args()
 

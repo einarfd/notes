@@ -12,7 +12,7 @@
 #     }
 #
 #     handle {
-#         reverse_proxy localhost:8000
+#         reverse_proxy localhost:3000
 #     }
 # }
 
@@ -27,7 +27,7 @@
 #     }
 #
 #     handle {
-#         reverse_proxy localhost:8000
+#         reverse_proxy localhost:3000
 #     }
 # }
 
@@ -39,5 +39,5 @@
 # }
 #
 # notes.example.com {
-#     reverse_proxy localhost:8000
+#     reverse_proxy localhost:3000
 # }
