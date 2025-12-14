@@ -2,15 +2,16 @@
 
 from pathlib import Path
 
-from fastapi import APIRouter, Form, Request
+from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import ValidationError
 
 from notes.services import NoteService
+from notes.web.auth import verify_credentials
 from notes.web.markdown import render_markdown
 
-router = APIRouter(tags=["views"])
+router = APIRouter(tags=["views"], dependencies=[Depends(verify_credentials)])
 
 templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
 

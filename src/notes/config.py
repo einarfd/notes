@@ -22,6 +22,13 @@ class AuthConfig(BaseModel):
     keys: dict[str, str] = {}  # name -> token
 
 
+class WebConfig(BaseModel):
+    """Web UI configuration."""
+
+    username: str | None = None
+    password: str | None = None
+
+
 class Config(BaseModel):
     """Application configuration."""
 
@@ -29,6 +36,7 @@ class Config(BaseModel):
     index_dir: Path = Path.home() / ".local" / "notes" / "index"
     server: ServerConfig = ServerConfig()
     auth: AuthConfig = AuthConfig()
+    web: WebConfig = WebConfig()
 
     def ensure_dirs(self) -> None:
         """Create data directories if they don't exist."""
@@ -87,6 +95,13 @@ class Config(BaseModel):
         # Include auth keys if any
         if self.auth.keys:
             data["auth"] = {"keys": self.auth.keys}
+
+        # Include web auth if configured
+        if self.web.username and self.web.password:
+            data["web"] = {
+                "username": self.web.username,
+                "password": self.web.password,
+            }
 
         with open(path, "wb") as f:
             tomli_w.dump(data, f)

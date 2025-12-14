@@ -5,15 +5,16 @@ from datetime import datetime
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import APIRouter, File, Form, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 
 from notes.backup import clear_notes, export_notes, import_notes
 from notes.config import get_config
 from notes.services import NoteService
+from notes.web.auth import verify_credentials
 
-router = APIRouter(prefix="/admin", tags=["admin"])
+router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(verify_credentials)])
 
 templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
 

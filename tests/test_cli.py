@@ -14,6 +14,8 @@ from notes.cli import (
     import_backup,
     main,
     rebuild_indexes,
+    web_clear_password,
+    web_set_password,
 )
 
 
@@ -447,4 +449,129 @@ class TestAuthRemove:
             assert "Error" in captured.out
             assert "not found" in captured.out
 
+
+class TestWebSetPassword:
+    """Tests for the web_set_password function."""
+
+    def test_web_set_password_with_username(self, capsys: pytest.CaptureFixture[str]):
+        """Test setting web password with username provided."""
+        with (
+            patch("notes.cli.Config.load") as mock_load,
+            patch("getpass.getpass", return_value="mypassword"),
+        ):
+            mock_config = MagicMock()
+            mock_config.web.username = None
+            mock_config.web.password = None
+            mock_load.return_value = mock_config
+
+            web_set_password("admin")
+
+            assert mock_config.web.username == "admin"
+            assert mock_config.web.password == "mypassword"
+            mock_config.save.assert_called_once()
+
+            captured = capsys.readouterr()
+            assert "Web auth configured for user 'admin'" in captured.out
+
+    def test_web_set_password_prompts_for_username(self, capsys: pytest.CaptureFixture[str]):
+        """Test setting web password prompts for username when not provided."""
+        with (
+            patch("notes.cli.Config.load") as mock_load,
+            patch("builtins.input", return_value="myuser"),
+            patch("getpass.getpass", return_value="mypassword"),
+        ):
+            mock_config = MagicMock()
+            mock_config.web.username = None
+            mock_config.web.password = None
+            mock_load.return_value = mock_config
+
+            web_set_password(None)
+
+            assert mock_config.web.username == "myuser"
+            assert mock_config.web.password == "mypassword"
+            mock_config.save.assert_called_once()
+
+    def test_web_set_password_empty_username_rejected(self, capsys: pytest.CaptureFixture[str]):
+        """Test empty username is rejected."""
+        with (
+            patch("notes.cli.Config.load") as mock_load,
+            patch("builtins.input", return_value=""),
+        ):
+            mock_config = MagicMock()
+            mock_load.return_value = mock_config
+
+            web_set_password(None)
+
+            mock_config.save.assert_not_called()
+            captured = capsys.readouterr()
+            assert "Error" in captured.out
+            assert "Username cannot be empty" in captured.out
+
+    def test_web_set_password_empty_password_rejected(self, capsys: pytest.CaptureFixture[str]):
+        """Test empty password is rejected."""
+        with (
+            patch("notes.cli.Config.load") as mock_load,
+            patch("getpass.getpass", return_value=""),
+        ):
+            mock_config = MagicMock()
+            mock_load.return_value = mock_config
+
+            web_set_password("admin")
+
+            mock_config.save.assert_not_called()
+            captured = capsys.readouterr()
+            assert "Error" in captured.out
+            assert "Password cannot be empty" in captured.out
+
+
+class TestWebClearPassword:
+    """Tests for the web_clear_password function."""
+
+    def test_web_clear_password(self, capsys: pytest.CaptureFixture[str]):
+        """Test clearing web password."""
+        with patch("notes.cli.Config.load") as mock_load:
+            mock_config = MagicMock()
+            mock_config.web.username = "admin"
+            mock_config.web.password = "secret"
+            mock_load.return_value = mock_config
+
+            web_clear_password()
+
+            assert mock_config.web.username is None
+            assert mock_config.web.password is None
+            mock_config.save.assert_called_once()
+
+            captured = capsys.readouterr()
+            assert "Web auth disabled" in captured.out
+
+
+class TestMainWebCommands:
+    """Tests for web commands via main()."""
+
+    def test_web_set_password_command(self):
+        """Test that web set-password command calls web_set_password."""
+        with (
+            patch("notes.cli.web_set_password") as mock_set_pw,
+            patch("sys.argv", ["notes-admin", "web", "set-password", "myuser"]),
+        ):
+            main()
+            mock_set_pw.assert_called_once_with("myuser")
+
+    def test_web_set_password_command_no_username(self):
+        """Test that web set-password without username passes None."""
+        with (
+            patch("notes.cli.web_set_password") as mock_set_pw,
+            patch("sys.argv", ["notes-admin", "web", "set-password"]),
+        ):
+            main()
+            mock_set_pw.assert_called_once_with(None)
+
+    def test_web_clear_password_command(self):
+        """Test that web clear-password command calls web_clear_password."""
+        with (
+            patch("notes.cli.web_clear_password") as mock_clear_pw,
+            patch("sys.argv", ["notes-admin", "web", "clear-password"]),
+        ):
+            main()
+            mock_clear_pw.assert_called_once()
 

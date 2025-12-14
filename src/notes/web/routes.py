@@ -1,11 +1,12 @@
 """REST API routes for notes."""
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ValidationError
 
 from notes.services import NoteService
+from notes.web.auth import verify_credentials
 
-router = APIRouter(prefix="/api", tags=["api"])
+router = APIRouter(prefix="/api", tags=["api"], dependencies=[Depends(verify_credentials)])
 
 
 class NoteCreate(BaseModel):

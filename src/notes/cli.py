@@ -151,6 +151,41 @@ def auth_remove(name: str) -> None:
     print(f"Removed API key '{name}'")
 
 
+def web_set_password(username: str | None) -> None:
+    """Set web UI credentials."""
+    import getpass
+
+    config = Config.load()
+
+    if not username:
+        username = input("Username: ").strip()
+
+    if not username:
+        print("Error: Username cannot be empty.")
+        return
+
+    password = getpass.getpass("Password: ")
+
+    if not password:
+        print("Error: Password cannot be empty.")
+        return
+
+    config.web.username = username
+    config.web.password = password
+    config.save()
+
+    print(f"Web auth configured for user '{username}'")
+
+
+def web_clear_password() -> None:
+    """Remove web UI credentials."""
+    config = Config.load()
+    config.web.username = None
+    config.web.password = None
+    config.save()
+    print("Web auth disabled")
+
+
 def main() -> None:
     """Main entry point for notes-admin CLI."""
     parser = argparse.ArgumentParser(
@@ -211,6 +246,15 @@ def main() -> None:
     auth_remove_parser = auth_subparsers.add_parser("remove", help="Remove an API key")
     auth_remove_parser.add_argument("name", help="Name of the key to remove")
 
+    # Web auth commands
+    web_parser = subparsers.add_parser("web", help="Manage web UI authentication")
+    web_subparsers = web_parser.add_subparsers(dest="web_command", required=True)
+
+    set_pw_parser = web_subparsers.add_parser("set-password", help="Set web UI credentials")
+    set_pw_parser.add_argument("username", nargs="?", help="Username (prompts if not given)")
+
+    web_subparsers.add_parser("clear-password", help="Disable web UI authentication")
+
     args = parser.parse_args()
 
     if args.command == "rebuild":
@@ -230,6 +274,11 @@ def main() -> None:
             auth_add(args.name)
         elif args.auth_command == "remove":
             auth_remove(args.name)
+    elif args.command == "web":
+        if args.web_command == "set-password":
+            web_set_password(args.username)
+        elif args.web_command == "clear-password":
+            web_clear_password()
 
 
 if __name__ == "__main__":

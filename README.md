@@ -173,10 +173,15 @@ notes.example.com {
 Command-line tools for administration:
 
 ```bash
-# Manage API keys for HTTP mode
+# Manage API keys for MCP HTTP mode
 uv run notes-admin auth list              # List configured keys
 uv run notes-admin auth add <name>        # Generate and add new key
 uv run notes-admin auth remove <name>     # Remove a key
+
+# Manage web UI authentication
+uv run notes-admin web set-password           # Set username and password
+uv run notes-admin web set-password admin     # Set password for user 'admin'
+uv run notes-admin web clear-password         # Disable web authentication
 
 # Rebuild search and backlinks indexes
 uv run notes-admin rebuild
