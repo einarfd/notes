@@ -52,5 +52,7 @@ def mock_config(config: Config):
         patch("notes.tools.search._get_service", make_test_service),
         patch("notes.tools.tags._get_service", make_test_service),
         patch("notes.tools.links._get_service", make_test_service),
+        patch("notes.tools.history._get_service", make_test_service),
+        patch("notes.server._current_author", "test-author"),
     ):
         yield config

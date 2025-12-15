@@ -3,7 +3,7 @@
 from fastmcp.exceptions import ToolError
 from pydantic import ValidationError
 
-from notes.server import mcp
+from notes.server import get_current_author, mcp
 from notes.services import NoteService
 
 
@@ -25,8 +25,9 @@ def create_note(path: str, title: str, content: str, tags: list[str] | None = No
         Confirmation message with the note path
     """
     service = _get_service()
+    author = get_current_author()
     try:
-        service.create_note(path=path, title=title, content=content, tags=tags)
+        service.create_note(path=path, title=title, content=content, tags=tags, author=author)
     except (ValidationError, ValueError) as e:
         raise ToolError(f"Error creating note: {e}") from e
     return f"Created note at '{path}'"
@@ -91,6 +92,7 @@ def update_note(
         ToolError: If note not found, destination exists, or validation error
     """
     service = _get_service()
+    author = get_current_author()
     try:
         result = service.update_note(
             path=path,
@@ -101,6 +103,7 @@ def update_note(
             remove_tags=remove_tags,
             new_path=new_path,
             update_backlinks=update_backlinks,
+            author=author,
         )
     except (ValidationError, ValueError) as e:
         raise ToolError(f"Error updating note: {e}") from e
@@ -150,7 +153,8 @@ def delete_note(path: str) -> str:
         ToolError: If note not found
     """
     service = _get_service()
-    result = service.delete_note(path)
+    author = get_current_author()
+    result = service.delete_note(path, author=author)
 
     if not result.deleted:
         raise ToolError(f"Note not found: '{path}'")

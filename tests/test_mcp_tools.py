@@ -4,6 +4,12 @@ import pytest
 from fastmcp.exceptions import ToolError
 
 from notes.config import Config
+from notes.tools.history import (
+    diff_note_versions,
+    get_note_history,
+    get_note_version,
+    restore_note_version,
+)
 from notes.tools.links import get_backlinks
 from notes.tools.notes import (
     create_note,
@@ -27,6 +33,10 @@ _list_notes_in_folder = list_notes_in_folder.fn
 _search_notes = search_notes.fn
 _list_tags = list_tags.fn
 _find_by_tag = find_by_tag.fn
+_get_note_history = get_note_history.fn
+_get_note_version = get_note_version.fn
+_diff_note_versions = diff_note_versions.fn
+_restore_note_version = restore_note_version.fn
 
 
 class TestCreateNote:
@@ -444,3 +454,124 @@ class TestGetBacklinks:
         assert "Warning:" in result
         assert "source" in result
         assert "broken" in result
+
+
+class TestGetNoteHistory:
+    """Tests for get_note_history tool."""
+
+    def test_get_note_history(self, mock_config: Config):
+        """Test getting note history."""
+        _create_note(path="test", title="Test", content="v1")
+        _update_note("test", content="v2")
+        _update_note("test", content="v3")
+
+        result = _get_note_history("test")
+
+        assert len(result) == 3
+        # Most recent first
+        assert "version" in result[0]
+        assert "timestamp" in result[0]
+        assert "author" in result[0]
+        assert "message" in result[0]
+
+    def test_get_note_history_empty(self, mock_config: Config):
+        """Test getting history for non-existent note."""
+        result = _get_note_history("nonexistent")
+
+        assert result == []
+
+    def test_get_note_history_with_limit(self, mock_config: Config):
+        """Test getting history with limit."""
+        _create_note(path="test", title="Test", content="v1")
+        for i in range(5):
+            _update_note("test", content=f"v{i + 2}")
+
+        result = _get_note_history("test", limit=3)
+
+        assert len(result) == 3
+
+
+class TestGetNoteVersion:
+    """Tests for get_note_version tool."""
+
+    def test_get_note_version(self, mock_config: Config):
+        """Test getting a specific version."""
+        _create_note(path="test", title="V1 Title", content="v1 content")
+        history = _get_note_history("test")
+        v1_sha = history[0]["version"]
+
+        _update_note("test", title="V2 Title", content="v2 content")
+
+        result = _get_note_version("test", v1_sha)
+
+        assert result["title"] == "V1 Title"
+        assert result["content"] == "v1 content"
+        assert result["version"] == v1_sha
+
+    def test_get_note_version_not_found(self, mock_config: Config):
+        """Test getting non-existent version raises ToolError."""
+        _create_note(path="test", title="Test", content="Content")
+
+        with pytest.raises(ToolError, match="Version 'invalid' not found"):
+            _get_note_version("test", "invalid")
+
+
+class TestDiffNoteVersions:
+    """Tests for diff_note_versions tool."""
+
+    def test_diff_note_versions(self, mock_config: Config):
+        """Test diffing two versions."""
+        _create_note(path="test", title="Test", content="line1")
+        v1 = _get_note_history("test")[0]["version"]
+
+        _update_note("test", content="line1\nline2")
+        v2 = _get_note_history("test")[0]["version"]
+
+        result = _diff_note_versions("test", v1, v2)
+
+        assert result["path"] == "test"
+        assert result["from_version"] == v1
+        assert result["to_version"] == v2
+        assert "line2" in result["diff"]
+        assert result["additions"] >= 1
+
+
+class TestRestoreNoteVersion:
+    """Tests for restore_note_version tool."""
+
+    def test_restore_note_version(self, mock_config: Config):
+        """Test restoring a note to a previous version."""
+        _create_note(path="test", title="Original", content="original content", tags=["old"])
+        v1 = _get_note_history("test")[0]["version"]
+
+        _update_note("test", title="Modified", content="modified content", tags=["new"])
+
+        result = _restore_note_version("test", v1)
+
+        assert "Restored note 'test'" in result
+        assert v1 in result
+
+        # Verify the note was restored
+        note = _read_note("test")
+        assert note["title"] == "Original"
+        assert note["content"] == "original content"
+        assert note["tags"] == ["old"]
+
+    def test_restore_note_version_not_found(self, mock_config: Config):
+        """Test restoring to non-existent version raises ToolError."""
+        _create_note(path="test", title="Test", content="Content")
+
+        with pytest.raises(ToolError, match="Version 'invalid' not found"):
+            _restore_note_version("test", "invalid")
+
+    def test_restore_creates_new_commit(self, mock_config: Config):
+        """Test that restore creates a new commit."""
+        _create_note(path="test", title="V1", content="v1")
+        v1 = _get_note_history("test")[0]["version"]
+
+        _update_note("test", title="V2", content="v2")
+        _restore_note_version("test", v1)
+
+        # Should have 3 versions now
+        history = _get_note_history("test")
+        assert len(history) == 3
