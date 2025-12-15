@@ -12,6 +12,7 @@ from notes.cli import (
     clear_all,
     export_backup,
     import_backup,
+    init_git,
     main,
     rebuild_indexes,
     web_clear_password,
@@ -574,4 +575,85 @@ class TestMainWebCommands:
         ):
             main()
             mock_clear_pw.assert_called_once()
+
+
+class TestInitGit:
+    """Tests for the init_git function."""
+
+    def test_init_git_already_exists(self, capsys: pytest.CaptureFixture[str], tmp_path: Path):
+        """Test init_git when git repo already exists."""
+        # Create fake .git directory
+        (tmp_path / "notes" / ".git").mkdir(parents=True)
+
+        with patch("notes.cli.get_config") as mock_config:
+            mock_config.return_value.notes_dir = tmp_path / "notes"
+
+            init_git()
+
+            captured = capsys.readouterr()
+            assert "already exists" in captured.out
+
+    def test_init_git_no_notes(self, capsys: pytest.CaptureFixture[str], tmp_path: Path):
+        """Test init_git with no existing notes."""
+        notes_dir = tmp_path / "notes"
+        notes_dir.mkdir()
+
+        with (
+            patch("notes.cli.get_config") as mock_config,
+            patch("notes.cli.GitRepository") as mock_git_class,
+            patch("notes.cli.NoteService") as mock_service_class,
+        ):
+            mock_config.return_value.notes_dir = notes_dir
+            mock_git = MagicMock()
+            mock_git_class.return_value = mock_git
+            mock_service = MagicMock()
+            mock_service.list_notes.return_value = []
+            mock_service_class.return_value = mock_service
+
+            init_git()
+
+            mock_git.ensure_initialized.assert_called_once()
+            captured = capsys.readouterr()
+            assert "Initializing git repository" in captured.out
+            assert "no existing notes to commit" in captured.out
+
+    def test_init_git_with_notes(self, capsys: pytest.CaptureFixture[str], tmp_path: Path):
+        """Test init_git with existing notes creates initial commit."""
+        notes_dir = tmp_path / "notes"
+        notes_dir.mkdir()
+
+        with (
+            patch("notes.cli.get_config") as mock_config,
+            patch("notes.cli.GitRepository") as mock_git_class,
+            patch("notes.cli.NoteService") as mock_service_class,
+            patch("subprocess.run") as mock_run,
+        ):
+            mock_config.return_value.notes_dir = notes_dir
+            mock_git = MagicMock()
+            mock_git_class.return_value = mock_git
+            mock_service = MagicMock()
+            mock_service.list_notes.return_value = ["note1", "note2", "folder/note3"]
+            mock_service_class.return_value = mock_service
+            mock_run.return_value = MagicMock(returncode=0)
+
+            init_git()
+
+            mock_git.ensure_initialized.assert_called_once()
+            # Should call git add and git commit
+            assert mock_run.call_count == 2
+            captured = capsys.readouterr()
+            assert "Committed 3 existing notes" in captured.out
+
+
+class TestInitGitCommand:
+    """Tests for init-git via main()."""
+
+    def test_init_git_command(self):
+        """Test that init-git command calls init_git."""
+        with (
+            patch("notes.cli.init_git") as mock_init_git,
+            patch("sys.argv", ["notes-admin", "init-git"]),
+        ):
+            main()
+            mock_init_git.assert_called_once()
 

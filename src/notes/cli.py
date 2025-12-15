@@ -7,6 +7,7 @@ from pathlib import Path
 from notes.backup import clear_notes, export_notes, import_notes
 from notes.config import Config, get_config
 from notes.services import NoteService
+from notes.storage.git_repo import GitRepository
 
 
 def rebuild_indexes() -> None:
@@ -194,6 +195,54 @@ def web_clear_password() -> None:
     print("Web auth disabled")
 
 
+def init_git() -> None:
+    """Initialize git repository for version history."""
+    config = get_config()
+
+    # Check if git repo already exists
+    git_dir = config.notes_dir / ".git"
+    if git_dir.exists():
+        print(f"Git repository already exists at {config.notes_dir}")
+        return
+
+    print(f"Initializing git repository in {config.notes_dir}...")
+
+    # Create git repository
+    git = GitRepository(config.notes_dir)
+    git.ensure_initialized()
+
+    # Count existing notes and create initial commit if any exist
+    service = NoteService()
+    note_paths = service.list_notes()
+
+    if note_paths:
+        # Stage all existing markdown files
+        import subprocess
+
+        subprocess.run(
+            ["git", "add", "*.md"],
+            cwd=config.notes_dir,
+            capture_output=True,
+            check=True,
+        )
+
+        # Create initial commit
+        subprocess.run(
+            [
+                "git", "commit",
+                "-m", "Initial import of existing notes",
+                "--author", "Notes System <notes@local>",
+            ],
+            cwd=config.notes_dir,
+            capture_output=True,
+            check=True,
+        )
+
+        print(f"Done! Committed {len(note_paths)} existing notes.")
+    else:
+        print("Done! Git repository initialized (no existing notes to commit).")
+
+
 def main() -> None:
     """Main entry point for notes-admin CLI."""
     parser = argparse.ArgumentParser(
@@ -204,6 +253,9 @@ def main() -> None:
 
     # Rebuild command
     subparsers.add_parser("rebuild", help="Rebuild search and backlinks indexes")
+
+    # Init-git command
+    subparsers.add_parser("init-git", help="Initialize git repository for version history")
 
     # Export command
     export_parser = subparsers.add_parser("export", help="Export notes to a tar.gz archive")
@@ -267,6 +319,8 @@ def main() -> None:
 
     if args.command == "rebuild":
         rebuild_indexes()
+    elif args.command == "init-git":
+        init_git()
     elif args.command == "export":
         export_backup(args.output)
     elif args.command == "import":
