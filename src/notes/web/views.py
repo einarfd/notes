@@ -116,8 +116,104 @@ def create_note_form(
     return RedirectResponse(url=f"/notes/{path}", status_code=303)
 
 
-# NOTE: Specific routes (/edit, /delete) must come BEFORE the greedy {path:path} routes
+# NOTE: Specific routes (/edit, /delete, /history) must come BEFORE the greedy {path:path} routes
 # because {path:path} will match "foo/edit" as a path otherwise.
+
+
+@router.get("/notes/{path:path}/history", response_class=HTMLResponse)
+def view_note_history(request: Request, path: str) -> HTMLResponse:
+    """Show version history for a note."""
+    service = _get_service()
+    note = service.read_note(path)
+
+    if note is None:
+        return templates.TemplateResponse(
+            request=request,
+            name="base.html",
+            context={"content": f"Note not found: {path}"},
+            status_code=404,
+        )
+
+    versions = service.get_note_history(path, limit=50)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="note_history.html",
+        context={"note": note, "versions": versions},
+    )
+
+
+@router.get("/notes/{path:path}/versions/{version}", response_class=HTMLResponse)
+def view_note_version(request: Request, path: str, version: str) -> HTMLResponse:
+    """View a specific version of a note."""
+    service = _get_service()
+    note = service.get_note_version(path, version)
+
+    if note is None:
+        return templates.TemplateResponse(
+            request=request,
+            name="base.html",
+            context={"content": f"Version '{version}' not found for note '{path}'"},
+            status_code=404,
+        )
+
+    return templates.TemplateResponse(
+        request=request,
+        name="note_version.html",
+        context={"note": note, "version": version, "path": path},
+    )
+
+
+@router.get("/notes/{path:path}/diff", response_class=HTMLResponse)
+def view_note_diff(
+    request: Request, path: str, from_version: str = "", to_version: str = ""
+) -> HTMLResponse:
+    """Show diff between two versions of a note."""
+    service = _get_service()
+    note = service.read_note(path)
+
+    if note is None:
+        return templates.TemplateResponse(
+            request=request,
+            name="base.html",
+            context={"content": f"Note not found: {path}"},
+            status_code=404,
+        )
+
+    # Get versions for the dropdown
+    versions = service.get_note_history(path, limit=50)
+
+    diff = None
+    if from_version and to_version:
+        diff = service.diff_note_versions(path, from_version, to_version)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="note_diff.html",
+        context={
+            "note": note,
+            "versions": versions,
+            "from_version": from_version,
+            "to_version": to_version,
+            "diff": diff,
+        },
+    )
+
+
+@router.post("/notes/{path:path}/restore/{version}", response_model=None)
+def restore_note_version_form(
+    path: str, version: str, username: str = Depends(verify_credentials)
+) -> RedirectResponse:
+    """Restore a note to a previous version via form submission."""
+    service = _get_service()
+    author = username or "web"
+    result = service.restore_note_version(path, version, author=author)
+
+    if result is None:
+        # Redirect to history page if version not found
+        return RedirectResponse(url=f"/notes/{path}/history", status_code=303)
+
+    return RedirectResponse(url=f"/notes/{path}", status_code=303)
 
 
 @router.get("/notes/{path:path}/edit", response_class=HTMLResponse, response_model=None)

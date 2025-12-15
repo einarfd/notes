@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}{{ note.title }} ({{ version[:7] }}) - Notes{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="version-banner">
+        Viewing version <code>{{ version[:7] }}</code> from {{ note.updated_at.strftime('%Y-%m-%d %H:%M') }}
+    </div>
+    <h2>{{ note.title }}</h2>
+    <div class="metadata">
+        <strong>Path:</strong> {{ path }}<br>
+        <strong>Created:</strong> {{ note.created_at }}<br>
+        <strong>Updated:</strong> {{ note.updated_at }}
+    </div>
+    {% if note.tags %}
+    <div style="margin-bottom: 15px;">
+        {% for tag in note.tags %}
+        <span class="tag">{{ tag }}</span>
+        {% endfor %}
+    </div>
+    {% endif %}
+    <div class="note-content rendered-markdown">{{ note.content | render_markdown | safe }}</div>
+    <div class="actions">
+        <a href="/notes/{{ path }}" class="btn">Current Version</a>
+        <a href="/notes/{{ path }}/history" class="btn btn-secondary">History</a>
+        <form method="POST" action="/notes/{{ path }}/restore/{{ version }}" style="display:inline;"
+              onsubmit="return confirm('Restore to this version? This will create a new version with the old content.');">
+            <button type="submit" class="btn btn-restore">Restore This Version</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

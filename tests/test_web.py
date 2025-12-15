@@ -828,3 +828,246 @@ class TestMarkdownRendering:
         assert 'id="edit-tab"' in response.text
         assert 'id="preview-tab"' in response.text
         assert 'id="preview-pane"' in response.text
+
+
+class TestHistoryAPI:
+    """Tests for version history API."""
+
+    def test_get_note_history(self, client: TestClient):
+        """Test getting note history."""
+        # Create a note
+        client.post(
+            "/api/notes",
+            json={"path": "history-test", "title": "History Test", "content": "v1"},
+        )
+        # Update it to create a second version
+        client.put(
+            "/api/notes/history-test",
+            json={"content": "v2"},
+        )
+
+        response = client.get("/api/notes/history-test/history")
+
+        assert response.status_code == 200
+        versions = response.json()
+        assert len(versions) >= 2
+        assert "version" in versions[0]
+        assert "timestamp" in versions[0]
+        assert "author" in versions[0]
+        assert "message" in versions[0]
+
+    def test_get_note_history_single_version(self, client: TestClient):
+        """Test getting history for note with only creation commit."""
+        client.post(
+            "/api/notes",
+            json={"path": "single-version", "title": "Single Version", "content": "content"},
+        )
+
+        response = client.get("/api/notes/single-version/history")
+
+        assert response.status_code == 200
+        versions = response.json()
+        # Should have exactly one version (the creation commit)
+        assert len(versions) == 1
+        assert versions[0]["message"] == "Create note: single-version"
+
+    def test_get_note_version(self, client: TestClient):
+        """Test getting a specific version of a note."""
+        # Create a note
+        client.post(
+            "/api/notes",
+            json={"path": "version-test", "title": "Original", "content": "original"},
+        )
+        # Update it
+        client.put(
+            "/api/notes/version-test",
+            json={"title": "Updated", "content": "updated"},
+        )
+
+        # Get history to find version SHA
+        history_response = client.get("/api/notes/version-test/history")
+        versions = history_response.json()
+
+        if len(versions) >= 2:
+            # Get the older version
+            old_version = versions[-1]["version"]
+            response = client.get(f"/api/notes/version-test/versions/{old_version}")
+
+            assert response.status_code == 200
+            data = response.json()
+            assert data["title"] == "Original"
+            assert data["content"] == "original"
+            assert data["version"] == old_version
+
+    def test_get_note_version_not_found(self, client: TestClient):
+        """Test getting a nonexistent version."""
+        client.post(
+            "/api/notes",
+            json={"path": "ver-test", "title": "Test", "content": "content"},
+        )
+
+        response = client.get("/api/notes/ver-test/versions/nonexistent123")
+
+        assert response.status_code == 404
+
+    def test_diff_note_versions(self, client: TestClient):
+        """Test diffing two versions."""
+        # Create and update a note
+        client.post(
+            "/api/notes",
+            json={"path": "diff-test", "title": "Diff Test", "content": "line 1"},
+        )
+        client.put(
+            "/api/notes/diff-test",
+            json={"content": "line 1\nline 2"},
+        )
+
+        # Get versions
+        history_response = client.get("/api/notes/diff-test/history")
+        versions = history_response.json()
+
+        if len(versions) >= 2:
+            from_ver = versions[-1]["version"]
+            to_ver = versions[0]["version"]
+
+            response = client.get(
+                f"/api/notes/diff-test/diff?from_version={from_ver}&to_version={to_ver}"
+            )
+
+            assert response.status_code == 200
+            data = response.json()
+            assert data["path"] == "diff-test"
+            assert data["from_version"] == from_ver
+            assert data["to_version"] == to_ver
+            assert "diff" in data
+            assert "additions" in data
+            assert "deletions" in data
+
+    def test_restore_note_version(self, client: TestClient):
+        """Test restoring a note to a previous version."""
+        # Create and update a note
+        client.post(
+            "/api/notes",
+            json={"path": "restore-test", "title": "Original", "content": "original"},
+        )
+        client.put(
+            "/api/notes/restore-test",
+            json={"title": "Updated", "content": "updated"},
+        )
+
+        # Get versions
+        history_response = client.get("/api/notes/restore-test/history")
+        versions = history_response.json()
+
+        if len(versions) >= 2:
+            old_version = versions[-1]["version"]
+
+            response = client.post(f"/api/notes/restore-test/restore/{old_version}")
+
+            assert response.status_code == 200
+            data = response.json()
+            assert data["title"] == "Original"
+            assert data["content"] == "original"
+
+
+class TestHistoryViews:
+    """Tests for version history HTML views."""
+
+    def test_view_note_has_history_link(self, client: TestClient):
+        """Test that note view page has a history link."""
+        client.post(
+            "/api/notes",
+            json={"path": "link-test", "title": "Link Test", "content": "content"},
+        )
+
+        response = client.get("/notes/link-test")
+
+        assert response.status_code == 200
+        assert 'href="/notes/link-test/history"' in response.text
+
+    def test_history_page(self, client: TestClient):
+        """Test the history page shows version list."""
+        client.post(
+            "/api/notes",
+            json={"path": "hist-page", "title": "Hist Page", "content": "content"},
+        )
+
+        response = client.get("/notes/hist-page/history")
+
+        assert response.status_code == 200
+        assert "text/html" in response.headers["content-type"]
+        assert "Hist Page" in response.text
+        assert "History" in response.text
+
+    def test_history_page_not_found(self, client: TestClient):
+        """Test history page for nonexistent note."""
+        response = client.get("/notes/nonexistent/history")
+
+        assert response.status_code == 404
+
+    def test_version_page(self, client: TestClient):
+        """Test viewing a specific version page."""
+        client.post(
+            "/api/notes",
+            json={"path": "ver-page", "title": "Ver Page", "content": "original"},
+        )
+        client.put(
+            "/api/notes/ver-page",
+            json={"content": "updated"},
+        )
+
+        # Get versions
+        history_response = client.get("/api/notes/ver-page/history")
+        versions = history_response.json()
+
+        if len(versions) >= 2:
+            old_version = versions[-1]["version"]
+            response = client.get(f"/notes/ver-page/versions/{old_version}")
+
+            assert response.status_code == 200
+            assert "text/html" in response.headers["content-type"]
+            assert "Ver Page" in response.text
+            assert old_version[:7] in response.text
+
+    def test_diff_page(self, client: TestClient):
+        """Test the diff comparison page."""
+        client.post(
+            "/api/notes",
+            json={"path": "diff-page", "title": "Diff Page", "content": "content"},
+        )
+
+        response = client.get("/notes/diff-page/diff")
+
+        assert response.status_code == 200
+        assert "text/html" in response.headers["content-type"]
+        assert "Compare" in response.text
+
+    def test_restore_via_form(self, client: TestClient):
+        """Test restoring via form submission."""
+        client.post(
+            "/api/notes",
+            json={"path": "form-restore", "title": "Original", "content": "original"},
+        )
+        client.put(
+            "/api/notes/form-restore",
+            json={"title": "Updated", "content": "updated"},
+        )
+
+        # Get versions
+        history_response = client.get("/api/notes/form-restore/history")
+        versions = history_response.json()
+
+        if len(versions) >= 2:
+            old_version = versions[-1]["version"]
+
+            response = client.post(
+                f"/notes/form-restore/restore/{old_version}",
+                follow_redirects=False,
+            )
+
+            assert response.status_code == 303
+            assert response.headers["location"] == "/notes/form-restore"
+
+            # Verify restoration
+            note_response = client.get("/api/notes/form-restore")
+            assert note_response.json()["title"] == "Original"

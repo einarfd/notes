@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Compare: {{ note.title }} - Notes{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="history-header">
+        <h2>Compare Versions: {{ note.title }}</h2>
+        <a href="/notes/{{ note.path }}/history" class="btn btn-secondary">Back to History</a>
+    </div>
+    <div class="metadata">
+        <strong>Path:</strong> {{ note.path }}
+    </div>
+
+    <form method="GET" action="/notes/{{ note.path }}/diff" class="diff-form">
+        <div class="diff-selectors">
+            <div class="form-group">
+                <label for="from_version">From (older)</label>
+                <select name="from_version" id="from_version" required>
+                    <option value="">Select version...</option>
+                    {% for v in versions %}
+                    <option value="{{ v.commit_sha }}" {% if from_version == v.commit_sha %}selected{% endif %}>
+                        {{ v.commit_sha[:7] }} - {{ v.timestamp.strftime('%Y-%m-%d %H:%M') }} ({{ v.author }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="to_version">To (newer)</label>
+                <select name="to_version" id="to_version" required>
+                    <option value="">Select version...</option>
+                    {% for v in versions %}
+                    <option value="{{ v.commit_sha }}" {% if to_version == v.commit_sha %}selected{% endif %}>
+                        {{ v.commit_sha[:7] }} - {{ v.timestamp.strftime('%Y-%m-%d %H:%M') }} ({{ v.author }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn">Compare</button>
+        </div>
+    </form>
+
+    {% if diff %}
+    <div class="diff-stats">
+        <span class="diff-additions">+{{ diff.additions }}</span>
+        <span class="diff-deletions">-{{ diff.deletions }}</span>
+    </div>
+    <div class="diff-container">
+        <pre class="diff-content">{{ diff.diff_text }}</pre>
+    </div>
+    {% elif from_version and to_version %}
+    <div class="empty-state">
+        <p>No differences found between these versions.</p>
+    </div>
+    {% elif versions|length < 2 %}
+    <div class="empty-state">
+        <p>Need at least two versions to compare.</p>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>Select two versions to compare.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

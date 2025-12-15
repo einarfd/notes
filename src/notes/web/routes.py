@@ -45,6 +45,38 @@ class SearchResult(BaseModel):
     score: str
 
 
+class VersionInfo(BaseModel):
+    """Version history entry."""
+
+    version: str
+    timestamp: str
+    author: str
+    message: str
+
+
+class NoteVersionResponse(BaseModel):
+    """Response body for a note at a specific version."""
+
+    path: str
+    title: str
+    content: str
+    tags: list[str]
+    version: str
+    created_at: str
+    updated_at: str
+
+
+class DiffResponse(BaseModel):
+    """Response body for a diff between versions."""
+
+    path: str
+    from_version: str
+    to_version: str
+    diff: str
+    additions: int
+    deletions: int
+
+
 class FolderContents(BaseModel):
     """Contents of a folder."""
 
@@ -70,6 +102,115 @@ def list_notes(folder: str | None = None) -> FolderContents:
         return FolderContents(notes=contents["notes"], subfolders=contents["subfolders"])
     # No folder filter - return all notes, no subfolders
     return FolderContents(notes=service.list_notes(), subfolders=[])
+
+
+# History API endpoints - must be before the generic {path:path} routes
+
+
+@router.get("/notes/{path:path}/history")
+def get_note_history(path: str, limit: int = 50) -> list[VersionInfo]:
+    """Get version history for a note.
+
+    Args:
+        path: The note path
+        limit: Maximum number of versions to return (default 50, max 100)
+    """
+    service = _get_service()
+    limit = min(limit, 100)
+    versions = service.get_note_history(path, limit=limit)
+
+    return [
+        VersionInfo(
+            version=v.commit_sha,
+            timestamp=v.timestamp.isoformat(),
+            author=v.author,
+            message=v.message,
+        )
+        for v in versions
+    ]
+
+
+@router.get("/notes/{path:path}/versions/{version}")
+def get_note_version(path: str, version: str) -> NoteVersionResponse:
+    """Get a specific version of a note.
+
+    Args:
+        path: The note path
+        version: The commit SHA (short or full)
+    """
+    service = _get_service()
+    note = service.get_note_version(path, version)
+
+    if note is None:
+        raise HTTPException(
+            status_code=404, detail=f"Version '{version}' not found for note '{path}'"
+        )
+
+    return NoteVersionResponse(
+        path=note.path,
+        title=note.title,
+        content=note.content,
+        tags=note.tags,
+        version=version,
+        created_at=note.created_at.isoformat(),
+        updated_at=note.updated_at.isoformat(),
+    )
+
+
+@router.get("/notes/{path:path}/diff")
+def diff_note_versions(
+    path: str, from_version: str, to_version: str
+) -> DiffResponse:
+    """Show diff between two versions of a note.
+
+    Args:
+        path: The note path
+        from_version: Starting version (commit SHA)
+        to_version: Ending version (commit SHA)
+    """
+    service = _get_service()
+    diff = service.diff_note_versions(path, from_version, to_version)
+
+    return DiffResponse(
+        path=diff.path,
+        from_version=diff.from_version,
+        to_version=diff.to_version,
+        diff=diff.diff_text,
+        additions=diff.additions,
+        deletions=diff.deletions,
+    )
+
+
+@router.post("/notes/{path:path}/restore/{version}")
+def restore_note_version(
+    path: str, version: str, username: str = Depends(verify_credentials)
+) -> NoteResponse:
+    """Restore a note to a previous version.
+
+    This creates a new commit with the old content, preserving all history.
+
+    Args:
+        path: The note path
+        version: The version SHA to restore
+    """
+    service = _get_service()
+    # Use authenticated username as author, or "web" if auth is disabled
+    author = username or "web"
+    note = service.restore_note_version(path, version, author=author)
+
+    if note is None:
+        raise HTTPException(
+            status_code=404, detail=f"Version '{version}' not found for note '{path}'"
+        )
+
+    return NoteResponse(
+        path=note.path,
+        title=note.title,
+        content=note.content,
+        tags=note.tags,
+        created_at=note.created_at.isoformat(),
+        updated_at=note.updated_at.isoformat(),
+    )
 
 
 @router.get("/notes/{path:path}")

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}History: {{ note.title }} - Notes{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="history-header">
+        <h2>History: {{ note.title }}</h2>
+        <a href="/notes/{{ note.path }}" class="btn btn-secondary">Back to Note</a>
+    </div>
+    <div class="metadata">
+        <strong>Path:</strong> {{ note.path }}
+    </div>
+
+    <div class="history-actions">
+        <a href="/notes/{{ note.path }}/diff" class="btn btn-secondary">Compare Versions</a>
+    </div>
+
+    {% if versions %}
+    <table class="history-table">
+        <thead>
+            <tr>
+                <th>Version</th>
+                <th>Date</th>
+                <th>Author</th>
+                <th>Message</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for version in versions %}
+            <tr>
+                <td><code>{{ version.commit_sha[:7] }}</code></td>
+                <td>{{ version.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>{{ version.author }}</td>
+                <td>{{ version.message }}</td>
+                <td class="history-actions-cell">
+                    <a href="/notes/{{ note.path }}/versions/{{ version.commit_sha }}" class="btn-small">View</a>
+                    {% if not loop.first %}
+                    <form method="POST" action="/notes/{{ note.path }}/restore/{{ version.commit_sha }}" style="display:inline;"
+                          onsubmit="return confirm('Restore to this version? This will create a new version with the old content.');">
+                        <button type="submit" class="btn-small btn-restore">Restore</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <p>No version history available for this note.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
