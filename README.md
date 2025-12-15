@@ -52,7 +52,7 @@ Add to your config file:
   "mcpServers": {
     "notes": {
       "command": "uv",
-      "args": ["run", "--directory", "/path/to/notes", "notes"]
+      "args": ["run", "--directory", "/path/to/notes", "notes", "--author", "claude"]
     }
   }
 }
@@ -70,7 +70,7 @@ Add to `.vscode/mcp.json` in your workspace:
     "servers": {
       "notes": {
         "command": "uv",
-        "args": ["run", "--directory", "/path/to/notes", "notes"]
+        "args": ["run", "--directory", "/path/to/notes", "notes", "--author", "vscode"]
       }
     }
   }
@@ -88,7 +88,7 @@ Add via Cursor Settings > MCP, or edit `mcp.json`:
   "mcpServers": {
     "notes": {
       "command": "uv",
-      "args": ["run", "--directory", "/path/to/notes", "notes"]
+      "args": ["run", "--directory", "/path/to/notes", "notes", "--author", "cursor"]
     }
   }
 }
@@ -103,7 +103,7 @@ Configure via `/mcp` command, or add to `~/.claude.json`:
   "mcpServers": {
     "notes": {
       "command": "uv",
-      "args": ["run", "--directory", "/path/to/notes", "notes"]
+      "args": ["run", "--directory", "/path/to/notes", "notes", "--author", "claude-code"]
     }
   }
 }
@@ -118,7 +118,7 @@ Open Perplexity → Settings → MCP Servers → Add Server:
   "mcpServers": {
     "notes": {
       "command": "uv",
-      "args": ["run", "--directory", "/path/to/notes", "notes"]
+      "args": ["run", "--directory", "/path/to/notes", "notes", "--author", "perplexity"]
     }
   }
 }
@@ -215,11 +215,40 @@ cp config.env.example config.env
 
 See [deploy/README.md](deploy/README.md) for full documentation.
 
+## Version History
+
+Notes supports git-based version history for all changes. Every note operation (create, update, delete) is tracked in a git repository with full history preserved.
+
+### Features
+
+- **View history**: See all changes to a note with timestamps and authors
+- **View old versions**: Read any previous version of a note
+- **Compare versions**: Diff between any two versions
+- **Restore versions**: Restore a note to any previous version (creates a new commit)
+
+### Author Tracking
+
+- **MCP (stdio)**: Requires `--author` flag (see client setup above)
+- **Web UI**: Uses authenticated username, or "web" if auth is disabled
+
+### Migrating Existing Notes
+
+To enable version history for existing notes:
+
+```bash
+uv run notes-admin init-git
+```
+
+This initializes a git repository and commits all existing notes.
+
 ## Admin CLI
 
 Command-line tools for administration:
 
 ```bash
+# Initialize version history for existing notes
+uv run notes-admin init-git
+
 # Manage API keys for MCP HTTP mode
 uv run notes-admin auth list              # List configured keys
 uv run notes-admin auth add <name>        # Generate and add new key

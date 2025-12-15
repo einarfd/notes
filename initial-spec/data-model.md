@@ -272,3 +272,80 @@ File path mirrors note path: `projects/wiki-ai/ideas.md`
 - All data in one file
 - Simple deployment
 - Good for personal use
+
+---
+
+## Version History
+
+Notes supports git-based version history for tracking all changes to notes. Every create, update, and delete operation is recorded as a git commit.
+
+### Storage
+
+Version history is stored in a git repository within the notes directory. Each note operation creates an atomic commit with:
+- The changed file(s)
+- A descriptive commit message (e.g., "Create note: path", "Update note: path")
+- Author information
+- Timestamp
+
+### NoteVersion Schema
+
+```yaml
+NoteVersion:
+  commit_sha: string    # Git commit SHA (full 40 characters)
+  timestamp: string     # ISO8601 timestamp of the commit
+  author: string        # Author name from the commit
+  message: string       # Commit message
+```
+
+### Example
+
+```yaml
+commit_sha: "abc1234567890abcdef1234567890abcdef123456"
+timestamp: "2024-01-15T14:30:00Z"
+author: "alice"
+message: "Update note: projects/wiki-ai/ideas"
+```
+
+### NoteDiff Schema
+
+```yaml
+NoteDiff:
+  path: string          # Path of the note
+  from_version: string  # Starting commit SHA
+  to_version: string    # Ending commit SHA
+  diff_text: string     # Unified diff output
+  additions: number     # Number of lines added
+  deletions: number     # Number of lines deleted
+```
+
+### Example
+
+```yaml
+path: "projects/wiki-ai/ideas"
+from_version: "abc1234"
+to_version: "def5678"
+diff_text: |
+  --- a/projects/wiki-ai/ideas.md
+  +++ b/projects/wiki-ai/ideas.md
+  @@ -10,7 +10,9 @@
+   Initial brainstorm:
+  -- Basic search
+  +- Full-text search
+  +- Version history
+additions: 2
+deletions: 1
+```
+
+### Author Tracking
+
+- **MCP (stdio mode)**: Author is provided via the mandatory `--author` flag when starting the server
+- **Web UI**: Author is the authenticated username, or "web" if authentication is disabled
+
+### Restore Behavior
+
+Restoring a note to a previous version does NOT rewrite git history. Instead, it:
+1. Reads the content from the specified version
+2. Creates a new commit with that content
+3. All previous versions remain accessible
+
+This ensures version history is always preserved and can be audited.

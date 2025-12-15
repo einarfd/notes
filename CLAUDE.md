@@ -47,14 +47,16 @@ uv run mypy src
 ├─ Web Server (web/app.py)    NoteService (services/note_service.py)
 │  └─ Routes + Views ─────────┘       │
 │                                      ▼
-└─ Shared: Config, Models, Storage, Search
+└─ Shared: Config, Models, Storage, Search, Git
 ```
 
 ### Core Components
 
 - **`config.py`**: Pydantic-based configuration with default paths (`~/.local/notes/`)
 - **`models/note.py`**: Note model with YAML frontmatter serialization and Pydantic validators (path, title, tags)
+- **`models/version.py`**: NoteVersion and NoteDiff dataclasses for version history
 - **`storage/`**: Abstract `StorageBackend` interface with `FilesystemStorage` implementation
+- **`storage/git_repo.py`**: Git repository manager for version history (uses subprocess)
 - **`search/tantivy_index.py`**: Full-text search using Tantivy (path field uses raw tokenizer for exact matching)
 
 ### Service Layer
@@ -62,11 +64,17 @@ uv run mypy src
 - **`services/note_service.py`**: Central business logic shared by MCP and web
   - Accepts optional `Config` for dependency injection in tests
   - Methods: `create_note`, `read_note`, `update_note`, `delete_note`, `list_notes`, `search_notes`, `list_tags`, `find_by_tag`
+  - History methods: `get_note_history`, `get_note_version`, `diff_note_versions`, `restore_note_version`
 
 ### MCP Server
 
-- **`server.py`**: FastMCP entry point, imports tools to register them
+- **`server.py`**: FastMCP entry point, imports tools to register them, requires `--author` flag
 - **`tools/`**: MCP tools that delegate to `NoteService`
+  - `tools/notes.py`: CRUD operations
+  - `tools/search.py`: Full-text search
+  - `tools/tags.py`: Tag listing and filtering
+  - `tools/links.py`: Backlink queries
+  - `tools/history.py`: Version history operations (get_note_history, get_note_version, diff_note_versions, restore_note_version)
 
 ### Web Server
 
@@ -82,7 +90,9 @@ uv run mypy src
 - `tests/test_storage.py`: FilesystemStorage tests
 - `tests/test_search.py`: Tantivy search index tests
 - `tests/test_tools.py`: Note model serialization tests
-- `tests/test_service.py`: NoteService unit tests
-- `tests/test_mcp_tools.py`: MCP tool integration tests
-- `tests/test_web.py`: REST API and HTML view tests
+- `tests/test_service.py`: NoteService unit tests (including history methods)
+- `tests/test_mcp_tools.py`: MCP tool integration tests (including history tools)
+- `tests/test_web.py`: REST API and HTML view tests (including history endpoints)
 - `tests/test_validation.py`: Input validation and security tests
+- `tests/test_git_repo.py`: GitRepository unit tests
+- `tests/test_cli.py`: Admin CLI tests (including init-git command)

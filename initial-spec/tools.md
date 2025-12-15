@@ -15,6 +15,10 @@ This document defines the MCP tools exposed by a wiki-ai server.
 | `list_tags` | Get all tags in use |
 | `get_backlinks` | Find notes that link to a given note |
 | `recent_notes` | List recently updated notes |
+| `get_note_history` | Get version history for a note |
+| `get_note_version` | Read a specific version of a note |
+| `diff_note_versions` | Compare two versions of a note |
+| `restore_note_version` | Restore a note to a previous version |
 
 ---
 
@@ -649,3 +653,207 @@ No recent notes:
 ```
 No notes updated since 2024-01-15T00:00:00Z
 ```
+
+---
+
+## get_note_history
+
+Get the version history for a note, showing all changes with timestamps and authors.
+
+### Arguments
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `path` | string | Yes | Path of the note |
+| `limit` | number | No | Max versions to return (default: 50, max: 100) |
+
+### Input Schema
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "path": {
+      "type": "string",
+      "description": "Path of the note"
+    },
+    "limit": {
+      "type": "number",
+      "description": "Max versions to return (default 50)"
+    }
+  },
+  "required": ["path"]
+}
+```
+
+### Response
+
+Success: List of versions with commit SHA, timestamp, author, and message.
+
+```
+Version history for projects/wiki-ai/ideas:
+
+- abc1234 (2024-01-15T14:30:00Z) by alice
+  Update note: projects/wiki-ai/ideas
+
+- def5678 (2024-01-15T10:30:00Z) by bob
+  Create note: projects/wiki-ai/ideas
+```
+
+No history available:
+
+```
+No version history available for projects/wiki-ai/ideas
+```
+
+---
+
+## get_note_version
+
+Read a specific historical version of a note.
+
+### Arguments
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `path` | string | Yes | Path of the note |
+| `version` | string | Yes | Commit SHA (short or full) |
+
+### Input Schema
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "path": {
+      "type": "string",
+      "description": "Path of the note"
+    },
+    "version": {
+      "type": "string",
+      "description": "Commit SHA (short or full)"
+    }
+  },
+  "required": ["path", "version"]
+}
+```
+
+### Response
+
+Success: The note content at that version with metadata.
+
+```markdown
+# My Ideas (version abc1234)
+
+**Path:** projects/wiki-ai/ideas
+**Tags:** brainstorm, product
+**Version:** abc1234
+**Created:** 2024-01-15T10:30:00Z
+**Updated:** 2024-01-15T14:22:00Z
+
+---
+
+Here are my initial ideas for the wiki-ai project...
+```
+
+Error: If version not found.
+
+---
+
+## diff_note_versions
+
+Show the differences between two versions of a note.
+
+### Arguments
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `path` | string | Yes | Path of the note |
+| `from_version` | string | Yes | Starting version (older) |
+| `to_version` | string | Yes | Ending version (newer) |
+
+### Input Schema
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "path": {
+      "type": "string",
+      "description": "Path of the note"
+    },
+    "from_version": {
+      "type": "string",
+      "description": "Starting version (commit SHA)"
+    },
+    "to_version": {
+      "type": "string",
+      "description": "Ending version (commit SHA)"
+    }
+  },
+  "required": ["path", "from_version", "to_version"]
+}
+```
+
+### Response
+
+Success: Unified diff with change statistics.
+
+```
+Diff for projects/wiki-ai/ideas (abc1234 → def5678):
+
++3 additions, -1 deletions
+
+--- a/projects/wiki-ai/ideas.md
++++ b/projects/wiki-ai/ideas.md
+@@ -10,7 +10,9 @@
+ Initial brainstorm for wiki-ai features:
+ - Multi-LLM support via MCP
+ - Human-readable storage format
+-- Basic search
++- Full-text search with BM25
++- Tag-based organization
++- Version history
+```
+
+---
+
+## restore_note_version
+
+Restore a note to a previous version. This creates a NEW commit with the old content, preserving all history (never rewrites git history).
+
+### Arguments
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `path` | string | Yes | Path of the note |
+| `version` | string | Yes | Version SHA to restore |
+
+### Input Schema
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "path": {
+      "type": "string",
+      "description": "Path of the note"
+    },
+    "version": {
+      "type": "string",
+      "description": "Version SHA to restore"
+    }
+  },
+  "required": ["path", "version"]
+}
+```
+
+### Response
+
+Success: Confirmation that the note was restored.
+
+```
+Restored note 'projects/wiki-ai/ideas' to version abc1234
+```
+
+Error: If note or version not found.
