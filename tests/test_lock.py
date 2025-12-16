@@ -7,7 +7,7 @@ from typing import Any
 
 import pytest
 
-from notes.storage.lock import RWFileLock
+from botnotes.storage.lock import RWFileLock
 
 
 @pytest.fixture
@@ -56,8 +56,8 @@ def _named_writer_process(lock_path: Path, event_queue: Any, name: str) -> None:
 
 def _create_note_process(config_dict: dict, path: str, result_queue: Any) -> None:
     """Process for concurrent note creation test."""
-    from notes.config import Config
-    from notes.services import NoteService
+    from botnotes.config import Config
+    from botnotes.services import NoteService
 
     cfg = Config(
         notes_dir=Path(config_dict["notes_dir"]),
@@ -327,8 +327,8 @@ class TestNoteServiceLocking:
 
     def test_service_uses_same_lock_instance(self, tmp_path: Path) -> None:
         """Test that a service instance reuses the same lock."""
-        from notes.config import Config
-        from notes.services import NoteService
+        from botnotes.config import Config
+        from botnotes.services import NoteService
 
         config = Config(
             notes_dir=tmp_path / "notes",
@@ -343,8 +343,8 @@ class TestNoteServiceLocking:
 
     def test_service_lock_path(self, tmp_path: Path) -> None:
         """Test service creates lock in index directory."""
-        from notes.config import Config
-        from notes.services import NoteService
+        from botnotes.config import Config
+        from botnotes.services import NoteService
 
         config = Config(
             notes_dir=tmp_path / "notes",
@@ -352,7 +352,7 @@ class TestNoteServiceLocking:
         )
         service = NoteService(config)
 
-        expected_lock_path = config.index_dir / "notes.lock"
+        expected_lock_path = config.index_dir / "botnotes.lock"
         assert service._lock.lock_path == expected_lock_path
 
     def test_concurrent_creates_succeed(self, tmp_path: Path) -> None:
@@ -362,8 +362,8 @@ class TestNoteServiceLocking:
         processes try to create notes at the same time. Without locking,
         we could see file corruption or git errors.
         """
-        from notes.config import Config
-        from notes.services import NoteService
+        from botnotes.config import Config
+        from botnotes.services import NoteService
 
         config = Config(
             notes_dir=tmp_path / "notes",

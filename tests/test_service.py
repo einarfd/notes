@@ -1,7 +1,7 @@
 """Tests for NoteService."""
 
-from notes.config import Config
-from notes.services import NoteService
+from botnotes.config import Config
+from botnotes.services import NoteService
 
 
 class TestNoteServiceCreate:

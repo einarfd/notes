@@ -1,6 +1,6 @@
 """Tests for MCP tools."""
 
-from notes.models.note import Note
+from botnotes.models.note import Note
 
 
 def test_note_to_markdown():

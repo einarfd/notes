@@ -3,15 +3,15 @@
 import pytest
 from fastmcp.exceptions import ToolError
 
-from notes.config import Config
-from notes.tools.history import (
+from botnotes.config import Config
+from botnotes.tools.history import (
     diff_note_versions,
     get_note_history,
     get_note_version,
     restore_note_version,
 )
-from notes.tools.links import get_backlinks
-from notes.tools.notes import (
+from botnotes.tools.links import get_backlinks
+from botnotes.tools.notes import (
     create_note,
     delete_note,
     list_notes,
@@ -19,8 +19,8 @@ from notes.tools.notes import (
     read_note,
     update_note,
 )
-from notes.tools.search import search_notes
-from notes.tools.tags import find_by_tag, list_tags
+from botnotes.tools.search import search_notes
+from botnotes.tools.tags import find_by_tag, list_tags
 
 # Access underlying functions (unwrap from @mcp.tool() decorator)
 _create_note = create_note.fn

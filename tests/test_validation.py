@@ -3,8 +3,8 @@
 import pytest
 from pydantic import ValidationError
 
-from notes.models.note import Note
-from notes.storage.filesystem import FilesystemStorage
+from botnotes.models.note import Note
+from botnotes.storage.filesystem import FilesystemStorage
 
 
 class TestPathSanitization:

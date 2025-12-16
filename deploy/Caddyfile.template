@@ -1,4 +1,4 @@
-# Caddyfile Template for Notes Deployment
+# Caddyfile Template for BotNotes Deployment
 # This file is for reference - setup-tailscale.sh generates the actual Caddyfile
 
 # ============================================================================
@@ -19,7 +19,7 @@
 # ============================================================================
 # Domain Mode (automatic Let's Encrypt)
 # ============================================================================
-# notes.example.com {
+# botnotes.example.com {
 #     # Caddy automatically fetches Let's Encrypt certs
 #
 #     handle /mcp* {
@@ -38,6 +38,6 @@
 #     reverse_proxy localhost:8080
 # }
 #
-# notes.example.com {
+# botnotes.example.com {
 #     reverse_proxy localhost:3000
 # }

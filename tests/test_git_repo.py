@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from notes.storage.git_repo import GitRepository
+from botnotes.storage.git_repo import GitRepository
 
 
 @pytest.fixture

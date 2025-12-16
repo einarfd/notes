@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from notes.config import AuthConfig, Config, ServerConfig
+from botnotes.config import AuthConfig, Config, ServerConfig
 
 
 class TestServerConfig:

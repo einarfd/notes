@@ -2,7 +2,7 @@
 
 import pytest
 
-from notes.auth import ApiKeyAuthProvider
+from botnotes.auth import ApiKeyAuthProvider
 
 
 class TestApiKeyAuthProvider:
@@ -32,8 +32,8 @@ class TestApiKeyAuthProvider:
         assert result is not None
         assert result.client_id == "claude-desktop"
         assert result.token == "token-abc123"
-        assert "notes:read" in result.scopes
-        assert "notes:write" in result.scopes
+        assert "botnotes:read" in result.scopes
+        assert "botnotes:write" in result.scopes
 
     @pytest.mark.asyncio
     async def test_invalid_token_returns_none(

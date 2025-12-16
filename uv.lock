@@ -72,6 +72,55 @@ wheels = [
 ]
 
 [[package]]
+name = "botnotes"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "fastapi" },
+    { name = "fastmcp" },
+    { name = "jinja2" },
+    { name = "mistune" },
+    { name = "nh3" },
+    { name = "pydantic" },
+    { name = "tantivy" },
+    { name = "tomli-w" },
+    { name = "uvicorn" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "httpx" },
+    { name = "mypy" },
+    { name = "nox" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "ruff" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "fastapi", specifier = ">=0.115.0" },
+    { name = "fastmcp", specifier = ">=2.0.0" },
+    { name = "jinja2", specifier = ">=3.1.0" },
+    { name = "mistune", specifier = ">=3.0.0" },
+    { name = "nh3", specifier = ">=0.2.0" },
+    { name = "pydantic", specifier = ">=2.0.0" },
+    { name = "tantivy", specifier = ">=0.22.0" },
+    { name = "tomli-w", specifier = ">=1.0.0" },
+    { name = "uvicorn", specifier = ">=0.32.0" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "httpx", specifier = ">=0.28.0" },
+    { name = "mypy", specifier = ">=1.13.0" },
+    { name = "nox", specifier = ">=2025.11.12" },
+    { name = "pytest", specifier = ">=8.0.0" },
+    { name = "pytest-asyncio", specifier = ">=0.24.0" },
+    { name = "ruff", specifier = ">=0.8.0" },
+]
+
+[[package]]
 name = "cachetools"
 version = "6.2.2"
 source = { registry = "https://pypi.org/simple" }
@@ -683,55 +732,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/0d/95/2d6fc6461687d7a171f087995247dec33e8749a562bfadd85fb5dbf37a11/nh3-0.3.2-cp38-abi3-win32.whl", hash = "sha256:169db03df90da63286e0560ea0efa9b6f3b59844a9735514a1d47e6bb2c8c61b", size = 589826, upload-time = "2025-10-30T11:17:42.239Z" },
     { url = "https://files.pythonhosted.org/packages/64/9a/1a1c154f10a575d20dd634e5697805e589bbdb7673a0ad00e8da90044ba7/nh3-0.3.2-cp38-abi3-win_amd64.whl", hash = "sha256:562da3dca7a17f9077593214a9781a94b8d76de4f158f8c895e62f09573945fe", size = 596406, upload-time = "2025-10-30T11:17:43.773Z" },
     { url = "https://files.pythonhosted.org/packages/9e/7e/a96255f63b7aef032cbee8fc4d6e37def72e3aaedc1f72759235e8f13cb1/nh3-0.3.2-cp38-abi3-win_arm64.whl", hash = "sha256:cf5964d54edd405e68583114a7cba929468bcd7db5e676ae38ee954de1cfc104", size = 584162, upload-time = "2025-10-30T11:17:44.96Z" },
-]
-
-[[package]]
-name = "notes"
-version = "0.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "fastapi" },
-    { name = "fastmcp" },
-    { name = "jinja2" },
-    { name = "mistune" },
-    { name = "nh3" },
-    { name = "pydantic" },
-    { name = "tantivy" },
-    { name = "tomli-w" },
-    { name = "uvicorn" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "httpx" },
-    { name = "mypy" },
-    { name = "nox" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "ruff" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "fastapi", specifier = ">=0.115.0" },
-    { name = "fastmcp", specifier = ">=2.0.0" },
-    { name = "jinja2", specifier = ">=3.1.0" },
-    { name = "mistune", specifier = ">=3.0.0" },
-    { name = "nh3", specifier = ">=0.2.0" },
-    { name = "pydantic", specifier = ">=2.0.0" },
-    { name = "tantivy", specifier = ">=0.22.0" },
-    { name = "tomli-w", specifier = ">=1.0.0" },
-    { name = "uvicorn", specifier = ">=0.32.0" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "httpx", specifier = ">=0.28.0" },
-    { name = "mypy", specifier = ">=1.13.0" },
-    { name = "nox", specifier = ">=2025.11.12" },
-    { name = "pytest", specifier = ">=8.0.0" },
-    { name = "pytest-asyncio", specifier = ">=0.24.0" },
-    { name = "ruff", specifier = ">=0.8.0" },
 ]
 
 [[package]]

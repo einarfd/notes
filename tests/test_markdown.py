@@ -1,6 +1,6 @@
 """Tests for markdown rendering."""
 
-from notes.web.markdown import render_markdown
+from botnotes.web.markdown import render_markdown
 
 
 class TestRenderMarkdown:

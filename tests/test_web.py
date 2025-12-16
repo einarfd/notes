@@ -6,9 +6,9 @@ from unittest.mock import patch
 import pytest
 from fastapi.testclient import TestClient
 
-from notes.config import Config
-from notes.services import NoteService
-from notes.web.app import app
+from botnotes.config import Config
+from botnotes.services import NoteService
+from botnotes.web.app import app
 
 
 @pytest.fixture
@@ -19,10 +19,10 @@ def client(config: Config):
         return NoteService(config)
 
     with (
-        patch("notes.web.routes._get_service", make_test_service),
-        patch("notes.web.views._get_service", make_test_service),
-        patch("notes.web.admin._get_service", make_test_service),
-        patch("notes.web.admin.get_config", return_value=config),
+        patch("botnotes.web.routes._get_service", make_test_service),
+        patch("botnotes.web.views._get_service", make_test_service),
+        patch("botnotes.web.admin._get_service", make_test_service),
+        patch("botnotes.web.admin.get_config", return_value=config),
     ):
         yield TestClient(app)
 

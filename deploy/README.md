@@ -1,6 +1,6 @@
-# Notes Deployment
+# BotNotes Deployment
 
-Deploy the Notes MCP server and web UI behind HTTPS using Caddy.
+Deploy the BotNotes MCP server and web UI behind HTTPS using Caddy.
 
 ## Prerequisites
 
@@ -19,7 +19,7 @@ cp config.env.example config.env
 
 # 2. Set up API keys for MCP authentication
 cd ..
-uv run notes-admin auth add my-client
+uv run botnotes-admin auth add my-client
 # Save the token shown
 
 # 3. Set up Tailscale certificates
@@ -68,19 +68,19 @@ After setup, configure your MCP client.
 ```json
 {
   "servers": {
-    "notes": {
+    "botnotes": {
       "type": "http",
       "url": "https://your-machine.tailnet.ts.net/mcp",
       "headers": {
-        "Authorization": "Bearer ${input:notes-api-key}"
+        "Authorization": "Bearer ${input:botnotes-api-key}"
       }
     }
   },
   "inputs": [
     {
       "type": "promptString",
-      "id": "notes-api-key",
-      "description": "Notes API Key",
+      "id": "botnotes-api-key",
+      "description": "BotNotes API Key",
       "password": true
     }
   ]
@@ -92,7 +92,7 @@ After setup, configure your MCP client.
 ```json
 {
   "mcpServers": {
-    "notes": {
+    "botnotes": {
       "command": "npx",
       "args": [
         "mcp-remote",
@@ -110,14 +110,14 @@ After setup, configure your MCP client.
 
 **Note:** Claude's web UI Connectors (Settings → Connectors) only support OAuth, not bearer tokens.
 
-Get your API key with: `uv run notes-admin auth list`
+Get your API key with: `uv run botnotes-admin auth list`
 
 ## Web UI Authentication
 
 Optionally protect the web UI with HTTP Basic Auth:
 
 ```bash
-uv run notes-admin web set-password
+uv run botnotes-admin web set-password
 # Enter username and password when prompted
 ```
 
@@ -166,7 +166,7 @@ Check prerequisites:
 ### MCP client can't connect
 
 1. Verify the URL is correct (check Tailscale hostname)
-2. Verify API key is valid: `uv run notes-admin auth list`
+2. Verify API key is valid: `uv run botnotes-admin auth list`
 3. Test with curl:
    ```bash
    curl -H "Authorization: Bearer YOUR_KEY" https://hostname/mcp
@@ -179,7 +179,7 @@ For a VPS with a real domain:
 1. Edit `config.env`:
    ```bash
    MODE=domain
-   DOMAIN=notes.example.com
+   DOMAIN=botnotes.example.com
    EMAIL=admin@example.com
    ```
 
@@ -187,7 +187,7 @@ For a VPS with a real domain:
 
 3. Create a simple Caddyfile:
    ```
-   notes.example.com {
+   botnotes.example.com {
        handle /mcp* {
            reverse_proxy localhost:8080
        }

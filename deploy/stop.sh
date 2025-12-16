@@ -1,5 +1,5 @@
 #!/bin/bash
-# Stop all notes services
+# Stop all botnotes services
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

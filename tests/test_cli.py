@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from notes.cli import (
+from botnotes.cli import (
     auth_add,
     auth_list,
     auth_remove,
@@ -25,7 +25,7 @@ class TestRebuildIndexes:
 
     def test_rebuild_indexes_output(self, capsys: pytest.CaptureFixture[str]):
         """Test that rebuild_indexes prints progress."""
-        with patch("notes.cli.NoteService") as mock_service_class:
+        with patch("botnotes.cli.NoteService") as mock_service_class:
             mock_service = MagicMock()
             mock_service.rebuild_indexes.return_value = MagicMock(notes_processed=5)
             mock_service_class.return_value = mock_service
@@ -44,12 +44,12 @@ class TestExportBackup:
         self, capsys: pytest.CaptureFixture[str], tmp_path: Path
     ):
         """Test export with default output path."""
-        with patch("notes.cli.get_config") as mock_config, patch(
-            "notes.cli.export_notes"
+        with patch("botnotes.cli.get_config") as mock_config, patch(
+            "botnotes.cli.export_notes"
         ) as mock_export:
             mock_config.return_value.notes_dir = tmp_path
             mock_export.return_value = MagicMock(
-                notes_count=10, path=tmp_path / "notes-backup.tar.gz"
+                notes_count=10, path=tmp_path / "botnotes-backup.tar.gz"
             )
 
             export_backup(None)
@@ -64,8 +64,8 @@ class TestExportBackup:
     ):
         """Test export with custom output path."""
         output = str(tmp_path / "custom.tar.gz")
-        with patch("notes.cli.get_config") as mock_config, patch(
-            "notes.cli.export_notes"
+        with patch("botnotes.cli.get_config") as mock_config, patch(
+            "botnotes.cli.export_notes"
         ) as mock_export:
             mock_config.return_value.notes_dir = tmp_path
             mock_export.return_value = MagicMock(notes_count=5, path=Path(output))
@@ -86,9 +86,9 @@ class TestImportBackup:
         """Test import with merge mode."""
         archive = str(tmp_path / "backup.tar.gz")
         with (
-            patch("notes.cli.get_config") as mock_config,
-            patch("notes.cli.import_notes") as mock_import,
-            patch("notes.cli.NoteService") as mock_service_class,
+            patch("botnotes.cli.get_config") as mock_config,
+            patch("botnotes.cli.import_notes") as mock_import,
+            patch("botnotes.cli.NoteService") as mock_service_class,
         ):
             mock_config.return_value.notes_dir = tmp_path
             mock_import.return_value = MagicMock(
@@ -114,9 +114,9 @@ class TestImportBackup:
         """Test import with replace mode."""
         archive = str(tmp_path / "backup.tar.gz")
         with (
-            patch("notes.cli.get_config") as mock_config,
-            patch("notes.cli.import_notes") as mock_import,
-            patch("notes.cli.NoteService") as mock_service_class,
+            patch("botnotes.cli.get_config") as mock_config,
+            patch("botnotes.cli.import_notes") as mock_import,
+            patch("botnotes.cli.NoteService") as mock_service_class,
         ):
             mock_config.return_value.notes_dir = tmp_path
             mock_import.return_value = MagicMock(
@@ -140,9 +140,9 @@ class TestImportBackup:
         """Test that skipped message is not shown when no files skipped."""
         archive = str(tmp_path / "backup.tar.gz")
         with (
-            patch("notes.cli.get_config") as mock_config,
-            patch("notes.cli.import_notes") as mock_import,
-            patch("notes.cli.NoteService") as mock_service_class,
+            patch("botnotes.cli.get_config") as mock_config,
+            patch("botnotes.cli.import_notes") as mock_import,
+            patch("botnotes.cli.NoteService") as mock_service_class,
         ):
             mock_config.return_value.notes_dir = tmp_path
             mock_import.return_value = MagicMock(
@@ -166,9 +166,9 @@ class TestClearAll:
     ):
         """Test clear with --force skips confirmation."""
         with (
-            patch("notes.cli.get_config") as mock_config,
-            patch("notes.cli.clear_notes") as mock_clear,
-            patch("notes.cli.NoteService") as mock_service_class,
+            patch("botnotes.cli.get_config") as mock_config,
+            patch("botnotes.cli.clear_notes") as mock_clear,
+            patch("botnotes.cli.NoteService") as mock_service_class,
         ):
             mock_config.return_value.notes_dir = tmp_path
             mock_clear.return_value = 5
@@ -188,9 +188,9 @@ class TestClearAll:
     ):
         """Test clear without --force prompts and proceeds on 'yes'."""
         with (
-            patch("notes.cli.get_config") as mock_config,
-            patch("notes.cli.clear_notes") as mock_clear,
-            patch("notes.cli.NoteService") as mock_service_class,
+            patch("botnotes.cli.get_config") as mock_config,
+            patch("botnotes.cli.clear_notes") as mock_clear,
+            patch("botnotes.cli.NoteService") as mock_service_class,
             patch("builtins.input", return_value="yes"),
         ):
             mock_config.return_value.notes_dir = tmp_path
@@ -210,8 +210,8 @@ class TestClearAll:
     ):
         """Test clear without --force aborts on non-'yes' input."""
         with (
-            patch("notes.cli.get_config") as mock_config,
-            patch("notes.cli.clear_notes") as mock_clear,
+            patch("botnotes.cli.get_config") as mock_config,
+            patch("botnotes.cli.clear_notes") as mock_clear,
             patch("builtins.input", return_value="no"),
         ):
             mock_config.return_value.notes_dir = tmp_path
@@ -229,7 +229,7 @@ class TestMain:
     def test_rebuild_command(self):
         """Test that rebuild command calls rebuild_indexes."""
         with (
-            patch("notes.cli.rebuild_indexes") as mock_rebuild,
+            patch("botnotes.cli.rebuild_indexes") as mock_rebuild,
             patch("sys.argv", ["notes-admin", "rebuild"]),
         ):
             main()
@@ -238,7 +238,7 @@ class TestMain:
     def test_export_command_default(self):
         """Test that export command calls export_backup with no output."""
         with (
-            patch("notes.cli.export_backup") as mock_export,
+            patch("botnotes.cli.export_backup") as mock_export,
             patch("sys.argv", ["notes-admin", "export"]),
         ):
             main()
@@ -247,7 +247,7 @@ class TestMain:
     def test_export_command_with_output(self):
         """Test that export command calls export_backup with output path."""
         with (
-            patch("notes.cli.export_backup") as mock_export,
+            patch("botnotes.cli.export_backup") as mock_export,
             patch("sys.argv", ["notes-admin", "export", "my-backup.tar.gz"]),
         ):
             main()
@@ -256,7 +256,7 @@ class TestMain:
     def test_import_command(self):
         """Test that import command calls import_backup."""
         with (
-            patch("notes.cli.import_backup") as mock_import,
+            patch("botnotes.cli.import_backup") as mock_import,
             patch("sys.argv", ["notes-admin", "import", "backup.tar.gz"]),
         ):
             main()
@@ -265,7 +265,7 @@ class TestMain:
     def test_import_command_with_replace(self):
         """Test that import --replace calls import_backup with replace=True."""
         with (
-            patch("notes.cli.import_backup") as mock_import,
+            patch("botnotes.cli.import_backup") as mock_import,
             patch("sys.argv", ["notes-admin", "import", "backup.tar.gz", "--replace"]),
         ):
             main()
@@ -279,7 +279,7 @@ class TestMain:
     def test_clear_command(self):
         """Test that clear command calls clear_all without force."""
         with (
-            patch("notes.cli.clear_all") as mock_clear,
+            patch("botnotes.cli.clear_all") as mock_clear,
             patch("sys.argv", ["notes-admin", "clear"]),
         ):
             main()
@@ -288,7 +288,7 @@ class TestMain:
     def test_clear_command_with_force(self):
         """Test that clear --force calls clear_all with force=True."""
         with (
-            patch("notes.cli.clear_all") as mock_clear,
+            patch("botnotes.cli.clear_all") as mock_clear,
             patch("sys.argv", ["notes-admin", "clear", "--force"]),
         ):
             main()
@@ -307,7 +307,7 @@ class TestMain:
     def test_auth_list_command(self):
         """Test that auth list command calls auth_list."""
         with (
-            patch("notes.cli.auth_list") as mock_auth_list,
+            patch("botnotes.cli.auth_list") as mock_auth_list,
             patch("sys.argv", ["notes-admin", "auth", "list"]),
         ):
             main()
@@ -316,7 +316,7 @@ class TestMain:
     def test_auth_add_command(self):
         """Test that auth add command calls auth_add with name."""
         with (
-            patch("notes.cli.auth_add") as mock_auth_add,
+            patch("botnotes.cli.auth_add") as mock_auth_add,
             patch("sys.argv", ["notes-admin", "auth", "add", "my-key"]),
         ):
             main()
@@ -325,7 +325,7 @@ class TestMain:
     def test_auth_remove_command(self):
         """Test that auth remove command calls auth_remove with name."""
         with (
-            patch("notes.cli.auth_remove") as mock_auth_remove,
+            patch("botnotes.cli.auth_remove") as mock_auth_remove,
             patch("sys.argv", ["notes-admin", "auth", "remove", "my-key"]),
         ):
             main()
@@ -347,7 +347,7 @@ class TestAuthList:
 
     def test_auth_list_empty(self, capsys: pytest.CaptureFixture[str]):
         """Test auth_list with no keys configured."""
-        with patch("notes.cli.Config.load") as mock_load:
+        with patch("botnotes.cli.Config.load") as mock_load:
             mock_config = MagicMock()
             mock_config.auth.keys = {}
             mock_load.return_value = mock_config
@@ -356,11 +356,11 @@ class TestAuthList:
 
             captured = capsys.readouterr()
             assert "No API keys configured" in captured.out
-            assert "notes-admin auth add" in captured.out
+            assert "botnotes-admin auth add" in captured.out
 
     def test_auth_list_with_keys(self, capsys: pytest.CaptureFixture[str]):
         """Test auth_list shows key names."""
-        with patch("notes.cli.Config.load") as mock_load:
+        with patch("botnotes.cli.Config.load") as mock_load:
             mock_config = MagicMock()
             mock_config.auth.keys = {"key-a": "token-a", "key-b": "token-b"}
             mock_load.return_value = mock_config
@@ -381,7 +381,7 @@ class TestAuthAdd:
 
     def test_auth_add_creates_key(self, capsys: pytest.CaptureFixture[str]):
         """Test auth_add creates a new key and shows token."""
-        with patch("notes.cli.Config.load") as mock_load:
+        with patch("botnotes.cli.Config.load") as mock_load:
             mock_config = MagicMock()
             mock_config.auth.keys = {}
             mock_load.return_value = mock_config
@@ -399,7 +399,7 @@ class TestAuthAdd:
 
     def test_auth_add_duplicate_fails(self, capsys: pytest.CaptureFixture[str]):
         """Test auth_add fails on duplicate name."""
-        with patch("notes.cli.Config.load") as mock_load:
+        with patch("botnotes.cli.Config.load") as mock_load:
             mock_config = MagicMock()
             mock_config.auth.keys = {"existing-key": "some-token"}
             mock_load.return_value = mock_config
@@ -419,7 +419,7 @@ class TestAuthRemove:
 
     def test_auth_remove_key(self, capsys: pytest.CaptureFixture[str]):
         """Test auth_remove removes existing key."""
-        with patch("notes.cli.Config.load") as mock_load:
+        with patch("botnotes.cli.Config.load") as mock_load:
             mock_config = MagicMock()
             mock_config.auth.keys = {"my-key": "my-token"}
             mock_load.return_value = mock_config
@@ -436,7 +436,7 @@ class TestAuthRemove:
 
     def test_auth_remove_nonexistent(self, capsys: pytest.CaptureFixture[str]):
         """Test auth_remove fails on nonexistent key."""
-        with patch("notes.cli.Config.load") as mock_load:
+        with patch("botnotes.cli.Config.load") as mock_load:
             mock_config = MagicMock()
             mock_config.auth.keys = {}
             mock_load.return_value = mock_config
@@ -457,7 +457,7 @@ class TestWebSetPassword:
     def test_web_set_password_with_username(self, capsys: pytest.CaptureFixture[str]):
         """Test setting web password with username provided."""
         with (
-            patch("notes.cli.Config.load") as mock_load,
+            patch("botnotes.cli.Config.load") as mock_load,
             patch("getpass.getpass", return_value="mypassword"),
         ):
             mock_config = MagicMock()
@@ -477,7 +477,7 @@ class TestWebSetPassword:
     def test_web_set_password_prompts_for_username(self, capsys: pytest.CaptureFixture[str]):
         """Test setting web password prompts for username when not provided."""
         with (
-            patch("notes.cli.Config.load") as mock_load,
+            patch("botnotes.cli.Config.load") as mock_load,
             patch("builtins.input", return_value="myuser"),
             patch("getpass.getpass", return_value="mypassword"),
         ):
@@ -495,7 +495,7 @@ class TestWebSetPassword:
     def test_web_set_password_empty_username_rejected(self, capsys: pytest.CaptureFixture[str]):
         """Test empty username is rejected."""
         with (
-            patch("notes.cli.Config.load") as mock_load,
+            patch("botnotes.cli.Config.load") as mock_load,
             patch("builtins.input", return_value=""),
         ):
             mock_config = MagicMock()
@@ -511,7 +511,7 @@ class TestWebSetPassword:
     def test_web_set_password_empty_password_rejected(self, capsys: pytest.CaptureFixture[str]):
         """Test empty password is rejected."""
         with (
-            patch("notes.cli.Config.load") as mock_load,
+            patch("botnotes.cli.Config.load") as mock_load,
             patch("getpass.getpass", return_value=""),
         ):
             mock_config = MagicMock()
@@ -530,7 +530,7 @@ class TestWebClearPassword:
 
     def test_web_clear_password(self, capsys: pytest.CaptureFixture[str]):
         """Test clearing web password."""
-        with patch("notes.cli.Config.load") as mock_load:
+        with patch("botnotes.cli.Config.load") as mock_load:
             mock_config = MagicMock()
             mock_config.web.username = "admin"
             mock_config.web.password = "secret"
@@ -552,7 +552,7 @@ class TestMainWebCommands:
     def test_web_set_password_command(self):
         """Test that web set-password command calls web_set_password."""
         with (
-            patch("notes.cli.web_set_password") as mock_set_pw,
+            patch("botnotes.cli.web_set_password") as mock_set_pw,
             patch("sys.argv", ["notes-admin", "web", "set-password", "myuser"]),
         ):
             main()
@@ -561,7 +561,7 @@ class TestMainWebCommands:
     def test_web_set_password_command_no_username(self):
         """Test that web set-password without username passes None."""
         with (
-            patch("notes.cli.web_set_password") as mock_set_pw,
+            patch("botnotes.cli.web_set_password") as mock_set_pw,
             patch("sys.argv", ["notes-admin", "web", "set-password"]),
         ):
             main()
@@ -570,7 +570,7 @@ class TestMainWebCommands:
     def test_web_clear_password_command(self):
         """Test that web clear-password command calls web_clear_password."""
         with (
-            patch("notes.cli.web_clear_password") as mock_clear_pw,
+            patch("botnotes.cli.web_clear_password") as mock_clear_pw,
             patch("sys.argv", ["notes-admin", "web", "clear-password"]),
         ):
             main()
@@ -585,7 +585,7 @@ class TestInitGit:
         # Create fake .git directory
         (tmp_path / "notes" / ".git").mkdir(parents=True)
 
-        with patch("notes.cli.get_config") as mock_config:
+        with patch("botnotes.cli.get_config") as mock_config:
             mock_config.return_value.notes_dir = tmp_path / "notes"
 
             init_git()
@@ -599,9 +599,9 @@ class TestInitGit:
         notes_dir.mkdir()
 
         with (
-            patch("notes.cli.get_config") as mock_config,
-            patch("notes.cli.GitRepository") as mock_git_class,
-            patch("notes.cli.NoteService") as mock_service_class,
+            patch("botnotes.cli.get_config") as mock_config,
+            patch("botnotes.cli.GitRepository") as mock_git_class,
+            patch("botnotes.cli.NoteService") as mock_service_class,
         ):
             mock_config.return_value.notes_dir = notes_dir
             mock_git = MagicMock()
@@ -623,9 +623,9 @@ class TestInitGit:
         notes_dir.mkdir()
 
         with (
-            patch("notes.cli.get_config") as mock_config,
-            patch("notes.cli.GitRepository") as mock_git_class,
-            patch("notes.cli.NoteService") as mock_service_class,
+            patch("botnotes.cli.get_config") as mock_config,
+            patch("botnotes.cli.GitRepository") as mock_git_class,
+            patch("botnotes.cli.NoteService") as mock_service_class,
             patch("subprocess.run") as mock_run,
         ):
             mock_config.return_value.notes_dir = notes_dir
@@ -651,7 +651,7 @@ class TestInitGitCommand:
     def test_init_git_command(self):
         """Test that init-git command calls init_git."""
         with (
-            patch("notes.cli.init_git") as mock_init_git,
+            patch("botnotes.cli.init_git") as mock_init_git,
             patch("sys.argv", ["notes-admin", "init-git"]),
         ):
             main()

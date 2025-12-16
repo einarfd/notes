@@ -6,9 +6,9 @@ from unittest.mock import patch
 
 import pytest
 
-from notes.config import Config
-from notes.search import SearchIndex
-from notes.storage import FilesystemStorage
+from botnotes.config import Config
+from botnotes.search import SearchIndex
+from botnotes.storage import FilesystemStorage
 
 
 @pytest.fixture
@@ -42,17 +42,17 @@ def config(temp_dir: Path) -> Config:
 @pytest.fixture
 def mock_config(config: Config):
     """Patch _get_service to return NoteService with test configuration for MCP tool tests."""
-    from notes.services import NoteService
+    from botnotes.services import NoteService
 
     def make_test_service() -> NoteService:
         return NoteService(config)
 
     with (
-        patch("notes.tools.notes._get_service", make_test_service),
-        patch("notes.tools.search._get_service", make_test_service),
-        patch("notes.tools.tags._get_service", make_test_service),
-        patch("notes.tools.links._get_service", make_test_service),
-        patch("notes.tools.history._get_service", make_test_service),
-        patch("notes.server._current_author", "test-author"),
+        patch("botnotes.tools.notes._get_service", make_test_service),
+        patch("botnotes.tools.search._get_service", make_test_service),
+        patch("botnotes.tools.tags._get_service", make_test_service),
+        patch("botnotes.tools.links._get_service", make_test_service),
+        patch("botnotes.tools.history._get_service", make_test_service),
+        patch("botnotes.server._current_author", "test-author"),
     ):
         yield config

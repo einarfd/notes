@@ -1,5 +1,5 @@
 #!/bin/bash
-# Start all notes services
+# Start all botnotes services
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -101,7 +101,7 @@ echo
 echo "Starting MCP HTTP server on port $MCP_PORT..."
 if ! check_running "mcp"; then
     cd "$PROJECT_DIR"
-    nohup uv run notes-admin serve --host 127.0.0.1 --port "$MCP_PORT" \
+    nohup uv run botnotes-admin serve --host 127.0.0.1 --port "$MCP_PORT" \
         > "$LOG_DIR/mcp.log" 2>&1 &
     echo $! > "$PID_DIR/mcp.pid"
     echo -e "${GREEN}MCP server started (PID $(cat "$PID_DIR/mcp.pid"))${NC}"
@@ -111,7 +111,7 @@ fi
 echo "Starting Web server on port $WEB_PORT..."
 if ! check_running "web"; then
     cd "$PROJECT_DIR"
-    nohup uv run notes-web --host 127.0.0.1 --port "$WEB_PORT" --no-reload \
+    nohup uv run botnotes-web --host 127.0.0.1 --port "$WEB_PORT" --no-reload \
         > "$LOG_DIR/web.log" 2>&1 &
     echo $! > "$PID_DIR/web.pid"
     echo -e "${GREEN}Web server started (PID $(cat "$PID_DIR/web.pid"))${NC}"

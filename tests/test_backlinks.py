@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from notes.links.index import BacklinkInfo, BacklinksIndex
-from notes.links.parser import WikiLink
+from botnotes.links.index import BacklinkInfo, BacklinksIndex
+from botnotes.links.parser import WikiLink
 
 
 @pytest.fixture
@@ -219,7 +219,7 @@ class TestBacklinksIndexRebuild:
 
     def test_rebuild_reindexes_all_notes(self, index: BacklinksIndex):
         """Test that rebuild reindexes all provided notes."""
-        from notes.models import Note
+        from botnotes.models import Note
 
         notes = [
             Note(path="note1", title="Note 1", content="Link to [[target1]]"),
@@ -237,7 +237,7 @@ class TestBacklinksIndexRebuild:
 
     def test_rebuild_replaces_existing_index(self, index: BacklinksIndex):
         """Test that rebuild replaces the existing index."""
-        from notes.models import Note
+        from botnotes.models import Note
 
         # Create initial backlinks
         index.update_note_links(
@@ -269,7 +269,7 @@ class TestBacklinksIndexRebuild:
 
     def test_rebuild_note_without_links(self, index: BacklinksIndex):
         """Test rebuild handles notes without links."""
-        from notes.models import Note
+        from botnotes.models import Note
 
         notes = [
             Note(path="no-links", title="No Links", content="Just plain text"),

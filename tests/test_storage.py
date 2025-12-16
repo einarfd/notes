@@ -1,7 +1,7 @@
 """Tests for storage backends."""
 
-from notes.models.note import Note
-from notes.storage import FilesystemStorage
+from botnotes.models.note import Note
+from botnotes.storage import FilesystemStorage
 
 
 def test_save_and_load(storage: FilesystemStorage):

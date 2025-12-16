@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Notes is an AI-friendly note-taking application with both MCP server and web UI. It provides CRUD operations for notes, full-text search via Tantivy, and tag-based organization.
+BotNotes is an AI-friendly note-taking application with both MCP server and web UI. It provides CRUD operations for notes, full-text search via Tantivy, and tag-based organization.
 
 ## Commands
 
@@ -15,12 +15,12 @@ Notes is an AI-friendly note-taking application with both MCP server and web UI.
 uv sync
 
 # Run the MCP server
-uv run notes
+uv run botnotes
 
 # Run the web UI
-uv run notes-web
-uv run notes-web --port 3000  # custom port
-uv run notes-web --host 127.0.0.1  # localhost only
+uv run botnotes-web
+uv run botnotes-web --port 3000  # custom port
+uv run botnotes-web --host 127.0.0.1  # localhost only
 
 # Run all checks (ruff, mypy, pytest)
 uv run nox -s check
@@ -52,7 +52,7 @@ uv run mypy src
 
 ### Core Components
 
-- **`config.py`**: Pydantic-based configuration with default paths (`~/.local/notes/`)
+- **`config.py`**: Pydantic-based configuration with default paths (`~/.local/botnotes/`)
 - **`models/note.py`**: Note model with YAML frontmatter serialization and Pydantic validators (path, title, tags)
 - **`models/version.py`**: NoteVersion and NoteDiff dataclasses for version history
 - **`storage/`**: Abstract `StorageBackend` interface with `FilesystemStorage` implementation

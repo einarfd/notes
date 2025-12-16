@@ -149,7 +149,7 @@ echo
 echo "MCP client configuration:"
 echo '  {'
 echo '    "mcpServers": {'
-echo '      "notes": {'
+echo '      "botnotes": {'
 if [[ "$HTTPS_PORT" == "443" ]]; then
     echo "        \"url\": \"https://$TS_HOSTNAME/mcp\","
 else
@@ -163,5 +163,5 @@ echo '    }'
 echo '  }'
 echo
 echo "Next steps:"
-echo "  1. Ensure you have API keys: uv run notes-admin auth list"
+echo "  1. Ensure you have API keys: uv run botnotes-admin auth list"
 echo "  2. Start services: ./start.sh"

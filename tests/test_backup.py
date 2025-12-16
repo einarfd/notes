@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from notes.backup import clear_notes, export_notes, import_notes
+from botnotes.backup import clear_notes, export_notes, import_notes
 
 
 @pytest.fixture

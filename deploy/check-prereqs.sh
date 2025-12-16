@@ -1,5 +1,5 @@
 #!/bin/bash
-# Check prerequisites for notes deployment
+# Check prerequisites for botnotes deployment
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -82,18 +82,18 @@ else
     echo "  Set PROJECT_DIR in config.env"
 fi
 
-# Check notes config exists with auth
-NOTES_CONFIG="$HOME/.local/notes/config.toml"
-if [[ -f "$NOTES_CONFIG" ]]; then
-    if grep -q '\[auth.keys\]' "$NOTES_CONFIG" 2>/dev/null; then
-        log_ok "Notes config with API keys found"
+# Check botnotes config exists with auth
+BOTNOTES_CONFIG="$HOME/.local/botnotes/config.toml"
+if [[ -f "$BOTNOTES_CONFIG" ]]; then
+    if grep -q '\[auth.keys\]' "$BOTNOTES_CONFIG" 2>/dev/null; then
+        log_ok "BotNotes config with API keys found"
     else
-        log_warn "Notes config exists but no API keys configured"
-        echo "  Run: uv run notes-admin auth add <name>"
+        log_warn "BotNotes config exists but no API keys configured"
+        echo "  Run: uv run botnotes-admin auth add <name>"
     fi
 else
-    log_warn "Notes config not found: $NOTES_CONFIG"
-    echo "  MCP HTTP mode requires API keys. Run: uv run notes-admin auth add <name>"
+    log_warn "BotNotes config not found: $BOTNOTES_CONFIG"
+    echo "  MCP HTTP mode requires API keys. Run: uv run botnotes-admin auth add <name>"
 fi
 
 # Mode-specific checks

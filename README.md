@@ -1,4 +1,4 @@
-# Notes
+# BotNotes
 
 AI-friendly note-taking solution with MCP integration and web UI.
 
@@ -15,7 +15,7 @@ uv sync
 Run the MCP server for AI assistants (stdio mode, no config needed):
 
 ```bash
-uv run notes
+uv run botnotes
 ```
 
 Then configure your MCP client (see [Client Setup](#mcp-client-setup-local) below).
@@ -25,7 +25,7 @@ Then configure your MCP client (see [Client Setup](#mcp-client-setup-local) belo
 Run the web interface for browsing and editing notes:
 
 ```bash
-uv run notes-web
+uv run botnotes-web
 ```
 
 Opens at http://localhost:3000 with:
@@ -50,9 +50,9 @@ Add to your config file:
 ```json
 {
   "mcpServers": {
-    "notes": {
+    "botnotes": {
       "command": "uv",
-      "args": ["run", "--directory", "/path/to/notes", "notes", "--author", "claude"]
+      "args": ["run", "--directory", "/path/to/botnotes", "botnotes", "--author", "claude"]
     }
   }
 }
@@ -68,9 +68,9 @@ Add to `.vscode/mcp.json` in your workspace:
 {
   "mcp": {
     "servers": {
-      "notes": {
+      "botnotes": {
         "command": "uv",
-        "args": ["run", "--directory", "/path/to/notes", "notes", "--author", "vscode"]
+        "args": ["run", "--directory", "/path/to/botnotes", "botnotes", "--author", "vscode"]
       }
     }
   }
@@ -86,9 +86,9 @@ Add via Cursor Settings > MCP, or edit `mcp.json`:
 ```json
 {
   "mcpServers": {
-    "notes": {
+    "botnotes": {
       "command": "uv",
-      "args": ["run", "--directory", "/path/to/notes", "notes", "--author", "cursor"]
+      "args": ["run", "--directory", "/path/to/botnotes", "botnotes", "--author", "cursor"]
     }
   }
 }
@@ -101,9 +101,9 @@ Configure via `/mcp` command, or add to `~/.claude.json`:
 ```json
 {
   "mcpServers": {
-    "notes": {
+    "botnotes": {
       "command": "uv",
-      "args": ["run", "--directory", "/path/to/notes", "notes", "--author", "claude-code"]
+      "args": ["run", "--directory", "/path/to/botnotes", "botnotes", "--author", "claude-code"]
     }
   }
 }
@@ -116,9 +116,9 @@ Open Perplexity → Settings → MCP Servers → Add Server:
 ```json
 {
   "mcpServers": {
-    "notes": {
+    "botnotes": {
       "command": "uv",
-      "args": ["run", "--directory", "/path/to/notes", "notes", "--author", "perplexity"]
+      "args": ["run", "--directory", "/path/to/botnotes", "botnotes", "--author", "perplexity"]
     }
   }
 }
@@ -131,7 +131,7 @@ For remote MCP access over HTTPS with bearer token authentication.
 ### 1. Add an API Key
 
 ```bash
-uv run notes-admin auth add my-agent
+uv run botnotes-admin auth add my-agent
 ```
 
 This generates a secure token and displays it once. Save it for client configuration.
@@ -139,8 +139,8 @@ This generates a secure token and displays it once. Save it for client configura
 ### 2. Run HTTP Server
 
 ```bash
-uv run notes-admin serve
-uv run notes-admin serve --host 0.0.0.0 --port 9000  # custom bind
+uv run botnotes-admin serve
+uv run botnotes-admin serve --host 0.0.0.0 --port 9000  # custom bind
 ```
 
 ### 3. Configure Reverse Proxy (HTTPS)
@@ -148,7 +148,7 @@ uv run notes-admin serve --host 0.0.0.0 --port 9000  # custom bind
 Use Caddy, nginx, or similar for TLS termination. Caddy example:
 
 ```
-notes.example.com {
+botnotes.example.com {
     reverse_proxy localhost:8080
 }
 ```
@@ -160,19 +160,19 @@ notes.example.com {
 ```json
 {
   "servers": {
-    "notes": {
+    "botnotes": {
       "type": "http",
-      "url": "https://notes.example.com/mcp",
+      "url": "https://botnotes.example.com/mcp",
       "headers": {
-        "Authorization": "Bearer ${input:notes-api-key}"
+        "Authorization": "Bearer ${input:botnotes-api-key}"
       }
     }
   },
   "inputs": [
     {
       "type": "promptString",
-      "id": "notes-api-key",
-      "description": "Notes API Key",
+      "id": "botnotes-api-key",
+      "description": "BotNotes API Key",
       "password": true
     }
   ]
@@ -184,11 +184,11 @@ notes.example.com {
 ```json
 {
   "mcpServers": {
-    "notes": {
+    "botnotes": {
       "command": "npx",
       "args": [
         "mcp-remote",
-        "https://notes.example.com/mcp",
+        "https://botnotes.example.com/mcp",
         "--header",
         "Authorization: Bearer ${AUTH_TOKEN}"
       ],
@@ -217,7 +217,7 @@ See [deploy/README.md](deploy/README.md) for full documentation.
 
 ## Version History
 
-Notes supports git-based version history for all changes. Every note operation (create, update, delete) is tracked in a git repository with full history preserved.
+BotNotes supports git-based version history for all changes. Every note operation (create, update, delete) is tracked in a git repository with full history preserved.
 
 ### Features
 
@@ -236,7 +236,7 @@ Notes supports git-based version history for all changes. Every note operation (
 To enable version history for existing notes:
 
 ```bash
-uv run notes-admin init-git
+uv run botnotes-admin init-git
 ```
 
 This initializes a git repository and commits all existing notes.
@@ -247,32 +247,32 @@ Command-line tools for administration:
 
 ```bash
 # Initialize version history for existing notes
-uv run notes-admin init-git
+uv run botnotes-admin init-git
 
 # Manage API keys for MCP HTTP mode
-uv run notes-admin auth list              # List configured keys
-uv run notes-admin auth add <name>        # Generate and add new key
-uv run notes-admin auth remove <name>     # Remove a key
+uv run botnotes-admin auth list              # List configured keys
+uv run botnotes-admin auth add <name>        # Generate and add new key
+uv run botnotes-admin auth remove <name>     # Remove a key
 
 # Manage web UI authentication
-uv run notes-admin web set-password           # Set username and password
-uv run notes-admin web set-password admin     # Set password for user 'admin'
-uv run notes-admin web clear-password         # Disable web authentication
+uv run botnotes-admin web set-password           # Set username and password
+uv run botnotes-admin web set-password admin     # Set password for user 'admin'
+uv run botnotes-admin web clear-password         # Disable web authentication
 
 # Rebuild search and backlinks indexes
-uv run notes-admin rebuild
+uv run botnotes-admin rebuild
 
 # Export all notes to backup archive
-uv run notes-admin export                    # → notes-backup-YYYY-MM-DD.tar.gz
-uv run notes-admin export backup.tar.gz      # custom filename
+uv run botnotes-admin export                    # → botnotes-backup-YYYY-MM-DD.tar.gz
+uv run botnotes-admin export backup.tar.gz      # custom filename
 
 # Import notes from backup archive
-uv run notes-admin import backup.tar.gz              # merge with existing
-uv run notes-admin import backup.tar.gz --replace    # replace all notes
+uv run botnotes-admin import backup.tar.gz              # merge with existing
+uv run botnotes-admin import backup.tar.gz --replace    # replace all notes
 
 # Delete all notes
-uv run notes-admin clear              # prompts for confirmation
-uv run notes-admin clear --force      # skip confirmation
+uv run botnotes-admin clear              # prompts for confirmation
+uv run botnotes-admin clear --force      # skip confirmation
 ```
 
 ## Development

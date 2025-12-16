@@ -3,9 +3,9 @@
 from datetime import datetime, timedelta
 from unittest.mock import patch
 
-from notes.models.note import Note
-from notes.search import SearchIndex
-from notes.search.tantivy_index import _preprocess_date_math
+from botnotes.models.note import Note
+from botnotes.search import SearchIndex
+from botnotes.search.tantivy_index import _preprocess_date_math
 
 
 def test_index_and_search(search_index: SearchIndex):
@@ -118,14 +118,14 @@ class TestDateMathPreprocessing:
 
     def test_now_replacement(self):
         """Test 'now' is replaced with current timestamp."""
-        with patch("notes.search.tantivy_index.datetime") as mock_dt:
+        with patch("botnotes.search.tantivy_index.datetime") as mock_dt:
             mock_dt.now.return_value = datetime(2024, 6, 15, 12, 0, 0)
             result = _preprocess_date_math("created_at:[now TO *]")
             assert "2024-06-15T12:00:00Z" in result
 
     def test_now_minus_days(self):
         """Test 'now-7d' is replaced correctly."""
-        with patch("notes.search.tantivy_index.datetime") as mock_dt:
+        with patch("botnotes.search.tantivy_index.datetime") as mock_dt:
             mock_dt.now.return_value = datetime(2024, 6, 15, 12, 0, 0)
             result = _preprocess_date_math("created_at:[now-7d TO now]")
             assert "2024-06-08T12:00:00Z" in result
@@ -133,7 +133,7 @@ class TestDateMathPreprocessing:
 
     def test_now_plus_weeks(self):
         """Test 'now+2w' is replaced correctly."""
-        with patch("notes.search.tantivy_index.datetime") as mock_dt:
+        with patch("botnotes.search.tantivy_index.datetime") as mock_dt:
             mock_dt.now.return_value = datetime(2024, 6, 15, 12, 0, 0)
             result = _preprocess_date_math("updated_at:[now TO now+2w]")
             assert "2024-06-15T12:00:00Z" in result
@@ -153,7 +153,7 @@ class TestDateMathPreprocessing:
 
     def test_mixed_query(self):
         """Test date math mixed with text query."""
-        with patch("notes.search.tantivy_index.datetime") as mock_dt:
+        with patch("botnotes.search.tantivy_index.datetime") as mock_dt:
             mock_dt.now.return_value = datetime(2024, 6, 15, 12, 0, 0)
             result = _preprocess_date_math("python AND created_at:[now-1M TO now]")
             assert "python AND" in result
