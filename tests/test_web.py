@@ -23,6 +23,7 @@ def client(config: Config):
         patch("botnotes.web.views._get_service", make_test_service),
         patch("botnotes.web.admin._get_service", make_test_service),
         patch("botnotes.web.admin.get_config", return_value=config),
+        patch("botnotes.web.auth.get_config", return_value=config),
     ):
         yield TestClient(app)
 
