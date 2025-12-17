@@ -7,6 +7,7 @@ import mistune
 import nh3
 from mistune import InlineState
 from mistune.inline_parser import InlineParser
+from mistune.plugins.table import table as table_plugin
 
 # Define safe HTML elements and attributes for nh3
 ALLOWED_TAGS = {
@@ -111,7 +112,7 @@ def wiki_link_plugin(md: mistune.Markdown) -> None:
 def create_markdown_renderer() -> mistune.Markdown:
     """Create a configured mistune Markdown renderer."""
     renderer = WikiLinkRenderer(escape=False)
-    md = mistune.Markdown(renderer=renderer, plugins=[wiki_link_plugin])
+    md = mistune.Markdown(renderer=renderer, plugins=[wiki_link_plugin, table_plugin])
     return md
 
 
