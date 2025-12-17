@@ -7,7 +7,13 @@ import mistune
 import nh3
 from mistune import InlineState
 from mistune.inline_parser import InlineParser
+from mistune.plugins.def_list import def_list as def_list_plugin
+from mistune.plugins.footnotes import footnotes as footnotes_plugin
+from mistune.plugins.formatting import strikethrough as strikethrough_plugin
+from mistune.plugins.math import math as math_plugin
 from mistune.plugins.table import table as table_plugin
+from mistune.plugins.task_lists import task_lists as task_lists_plugin
+from mistune.plugins.url import url as url_plugin
 
 # Define safe HTML elements and attributes for nh3
 ALLOWED_TAGS = {
@@ -19,6 +25,7 @@ ALLOWED_TAGS = {
     "code",
     "dd",
     "del",
+    "div",  # math blocks
     "dl",
     "dt",
     "em",
@@ -30,6 +37,7 @@ ALLOWED_TAGS = {
     "h6",
     "hr",
     "i",
+    "input",  # task list checkboxes
     "ins",
     "kbd",
     "li",
@@ -39,6 +47,7 @@ ALLOWED_TAGS = {
     "q",
     "s",
     "samp",
+    "section",  # footnotes
     "small",
     "span",
     "strong",
@@ -58,8 +67,11 @@ ALLOWED_TAGS = {
 }
 
 ALLOWED_ATTRIBUTES: dict[str, set[str]] = {
-    "a": {"href", "title", "class"},
+    "a": {"href", "title", "class", "id"},  # id for footnote links
     "abbr": {"title"},
+    "input": {"type", "checked", "disabled"},  # task list checkboxes
+    "li": {"id"},  # footnote list items
+    "sup": {"id"},  # footnote references
     "*": {"class"},
 }
 
@@ -112,7 +124,19 @@ def wiki_link_plugin(md: mistune.Markdown) -> None:
 def create_markdown_renderer() -> mistune.Markdown:
     """Create a configured mistune Markdown renderer."""
     renderer = WikiLinkRenderer(escape=False)
-    md = mistune.Markdown(renderer=renderer, plugins=[wiki_link_plugin, table_plugin])
+    md = mistune.Markdown(
+        renderer=renderer,
+        plugins=[
+            wiki_link_plugin,
+            table_plugin,
+            task_lists_plugin,
+            strikethrough_plugin,
+            footnotes_plugin,
+            def_list_plugin,
+            math_plugin,
+            url_plugin,
+        ],
+    )
     return md
 
 
