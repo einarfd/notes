@@ -137,6 +137,10 @@ class NoteService:
     def read_note(self, path: str) -> Note | None:
         """Read a note by its path.
 
+        If the note is not found at the exact path, falls back to trying
+        {path}/index. This allows wiki links like [[folder]] to resolve
+        to folder/index notes.
+
         Args:
             path: The path/identifier of the note
 
@@ -144,7 +148,17 @@ class NoteService:
             The Note object, or None if not found
         """
         with self._lock.read_lock():
-            return self.storage.load(path)
+            # Handle empty path specially - go straight to index
+            if not path or not path.strip():
+                return self.storage.load("index")
+
+            note = self.storage.load(path)
+            if note is not None:
+                return note
+
+            # Try resolving as folder index
+            index_path = f"{path}/index"
+            return self.storage.load(index_path)
 
     def update_note(
         self,

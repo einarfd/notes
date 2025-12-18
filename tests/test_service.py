@@ -57,6 +57,45 @@ class TestNoteServiceRead:
 
         assert note is None
 
+    def test_read_note_fallback_to_index(self, config: Config):
+        """Test reading a folder path falls back to index note."""
+        service = NoteService(config)
+        # Create an index note for the folder
+        service.create_note(path="projects/index", title="Projects", content="Index content")
+
+        # Reading "projects" should resolve to "projects/index"
+        note = service.read_note("projects")
+
+        assert note is not None
+        assert note.path == "projects/index"
+        assert note.title == "Projects"
+
+    def test_read_note_prefers_exact_match(self, config: Config):
+        """Test that exact path match takes precedence over index fallback."""
+        service = NoteService(config)
+        # Create both a regular note and an index note (index created first)
+        service.create_note(path="docs/index", title="Docs Index", content="Index")
+        service.create_note(path="docs/readme", title="Readme", content="Read me")
+
+        # Reading "docs/readme" should return the exact match
+        note = service.read_note("docs/readme")
+
+        assert note is not None
+        assert note.path == "docs/readme"
+        assert note.title == "Readme"
+
+    def test_read_note_root_index_fallback(self, config: Config):
+        """Test reading empty path falls back to root index note."""
+        service = NoteService(config)
+        service.create_note(path="index", title="Home", content="Welcome")
+
+        # Reading "" should resolve to "index"
+        note = service.read_note("")
+
+        assert note is not None
+        assert note.path == "index"
+        assert note.title == "Home"
+
 
 class TestNoteServiceUpdate:
     """Tests for NoteService.update_note."""
