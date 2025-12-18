@@ -17,9 +17,10 @@ def create_note(path: str, title: str, content: str, tags: list[str] | None = No
 
     Args:
         path: The path/identifier for the note (e.g., "projects/myproject/design").
-            A note can exist at the same path as a folder - useful for creating
-            index notes (e.g., "projects/myproject" as an index for all notes
-            under that path).
+            Use "{folder}/index" to create an index note for a folder (e.g.,
+            "projects/index" for the projects folder). The root index note is
+            just "index". Wiki links can use either [[folder]] or [[folder/index]]
+            to link to index notes - both forms work.
         title: The title of the note
         content: The markdown content of the note
         tags: Optional list of tags for categorization
@@ -39,6 +40,9 @@ def create_note(path: str, title: str, content: str, tags: list[str] | None = No
 @mcp.tool()
 def read_note(path: str) -> dict[str, str | list[str]]:
     """Read a note by its path.
+
+    If no note exists at the exact path, falls back to "{path}/index".
+    This allows links like [[folder]] to resolve to folder/index notes.
 
     Args:
         path: The path/identifier of the note to read
