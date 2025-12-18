@@ -47,7 +47,7 @@ class TestNotesAPI:
         response = client.get("/api/notes")
 
         assert response.status_code == 200
-        assert response.json() == {"notes": [], "subfolders": []}
+        assert response.json() == {"notes": [], "subfolders": [], "has_index": False}
 
     def test_create_note(self, client: TestClient):
         """Test creating a note."""
@@ -188,7 +188,7 @@ class TestNotesAPI:
         response = client.get("/api/notes?folder=nonexistent")
 
         assert response.status_code == 200
-        assert response.json() == {"notes": [], "subfolders": []}
+        assert response.json() == {"notes": [], "subfolders": [], "has_index": False}
 
 
 class TestSearchAPI:

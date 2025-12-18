@@ -82,6 +82,7 @@ class FolderContents(BaseModel):
 
     notes: list[str]
     subfolders: list[str]
+    has_index: bool = False
 
 
 def _get_service() -> NoteService:
@@ -99,7 +100,14 @@ def list_notes(folder: str | None = None) -> FolderContents:
     service = _get_service()
     if folder is not None:
         contents = service.list_notes_in_folder(folder)
-        return FolderContents(notes=contents["notes"], subfolders=contents["subfolders"])
+        # Cast to satisfy mypy - we know the types
+        notes = contents["notes"]
+        subfolders = contents["subfolders"]
+        has_index = contents["has_index"]
+        assert isinstance(notes, list)
+        assert isinstance(subfolders, list)
+        assert isinstance(has_index, bool)
+        return FolderContents(notes=notes, subfolders=subfolders, has_index=has_index)
     # No folder filter - return all notes, no subfolders
     return FolderContents(notes=service.list_notes(), subfolders=[])
 

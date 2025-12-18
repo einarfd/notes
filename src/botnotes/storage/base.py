@@ -29,13 +29,19 @@ class StorageBackend(ABC):
         ...
 
     @abstractmethod
-    def list_by_prefix(self, prefix: str) -> dict[str, list[str]]:
+    def list_by_prefix(self, prefix: str) -> dict[str, list[str] | bool]:
         """List notes and subfolders within a folder.
+
+        Index notes ({folder}/index) are excluded from the notes list but
+        indicated via the 'has_index' flag.
 
         Args:
             prefix: Folder path. Empty string = top-level only.
 
         Returns:
-            Dict with 'notes' (direct notes) and 'subfolders' (immediate subfolders).
+            Dict with:
+            - 'notes': Direct notes (excluding index notes)
+            - 'subfolders': Immediate subfolder paths
+            - 'has_index': True if an index note exists for this folder
         """
         ...

@@ -95,14 +95,14 @@ def test_list_by_prefix_empty_result(storage: FilesystemStorage):
     storage.save(Note(path="elsewhere/note", title="Note", content=""))
 
     result = storage.list_by_prefix("nonexistent")
-    assert result == {"notes": [], "subfolders": []}
+    assert result == {"notes": [], "subfolders": [], "has_index": False}
 
 
 def test_list_by_prefix_strips_slashes(storage: FilesystemStorage):
     """Test that prefix strips leading/trailing slashes."""
     storage.save(Note(path="folder/note", title="Note", content=""))
 
-    expected = {"notes": ["folder/note"], "subfolders": []}
+    expected = {"notes": ["folder/note"], "subfolders": [], "has_index": False}
     assert storage.list_by_prefix("folder") == expected
     assert storage.list_by_prefix("/folder") == expected
     assert storage.list_by_prefix("folder/") == expected
@@ -119,15 +119,47 @@ def test_list_by_prefix_only_subfolders(storage: FilesystemStorage):
     assert result["subfolders"] == ["projects/api", "projects/web"]
 
 
-def test_list_by_prefix_includes_note_at_folder_path(storage: FilesystemStorage):
-    """Test that a note at exactly the folder path is included."""
-    # "projects" is both a note AND has child notes
-    storage.save(Note(path="projects", title="Projects Overview", content=""))
+def test_list_by_prefix_with_index_note(storage: FilesystemStorage):
+    """Test that index notes are detected but excluded from notes list."""
+    # Create an index note for projects folder
+    storage.save(Note(path="projects/index", title="Projects Index", content=""))
     storage.save(Note(path="projects/proj1", title="Project 1", content=""))
     storage.save(Note(path="projects/proj2", title="Project 2", content=""))
     storage.save(Note(path="projects/sub/proj3", title="Project 3", content=""))
 
     result = storage.list_by_prefix("projects")
-    # Should include the note at "projects" itself, plus child notes
-    assert result["notes"] == ["projects", "projects/proj1", "projects/proj2"]
+    # Index note should be excluded from list but has_index should be True
+    assert result["notes"] == ["projects/proj1", "projects/proj2"]
     assert result["subfolders"] == ["projects/sub"]
+    assert result["has_index"] is True
+
+
+def test_list_by_prefix_root_index(storage: FilesystemStorage):
+    """Test that root index note is detected."""
+    storage.save(Note(path="index", title="Home", content=""))
+    storage.save(Note(path="other", title="Other Note", content=""))
+
+    result = storage.list_by_prefix("")
+    assert result["notes"] == ["other"]
+    assert result["has_index"] is True
+
+
+def test_save_rejects_overlapping_note(storage: FilesystemStorage):
+    """Test that saving a note at a path with children is rejected."""
+    # First create a child note
+    storage.save(Note(path="projects/foo", title="Foo", content=""))
+
+    # Trying to create "projects" note should fail (overlap)
+    import pytest
+    with pytest.raises(ValueError, match="folder with that name exists"):
+        storage.save(Note(path="projects", title="Projects", content=""))
+
+
+def test_save_allows_index_note(storage: FilesystemStorage):
+    """Test that index notes are allowed even when folder has children."""
+    # First create a child note
+    storage.save(Note(path="projects/foo", title="Foo", content=""))
+
+    # Creating index note should work
+    storage.save(Note(path="projects/index", title="Projects Index", content=""))
+    assert storage.load("projects/index") is not None

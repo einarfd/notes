@@ -306,7 +306,7 @@ class TestNoteServiceListInFolder:
 
         result = service.list_notes_in_folder("nonexistent")
 
-        assert result == {"notes": [], "subfolders": []}
+        assert result == {"notes": [], "subfolders": [], "has_index": False}
 
 
 class TestNoteServiceMove:

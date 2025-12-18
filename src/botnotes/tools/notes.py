@@ -16,7 +16,10 @@ def create_note(path: str, title: str, content: str, tags: list[str] | None = No
     """Create a new note.
 
     Args:
-        path: The path/identifier for the note (e.g., "projects/wiki-ai/design")
+        path: The path/identifier for the note (e.g., "projects/myproject/design").
+            A note can exist at the same path as a folder - useful for creating
+            index notes (e.g., "projects/myproject" as an index for all notes
+            under that path).
         title: The title of the note
         content: The markdown content of the note
         tags: Optional list of tags for categorization
@@ -187,21 +190,37 @@ def list_notes() -> list[str]:
 
 
 @mcp.tool()
-def list_notes_in_folder(folder_path: str = "") -> dict[str, str | list[str]]:
+def list_notes_in_folder(folder_path: str = "") -> dict[str, str | list[str] | bool]:
     """List notes and subfolders in a specific folder.
+
+    Index notes ({folder}/index) are excluded from the notes list but indicated
+    via has_index. Use read_note("{folder}/index") to get the index content.
 
     Args:
         folder_path: The folder path to list (e.g., "projects" or "projects/myproject").
-                     Empty string lists only top-level contents.
+            Empty string lists only top-level contents.
 
     Returns:
-        Dict with folder path, subfolders list, and notes list
+        Dict with:
+        - folder: The folder path
+        - notes: Direct notes in this folder (excluding index notes)
+        - subfolders: Immediate subfolder paths
+        - has_index: True if an index note exists for this folder
     """
     service = _get_service()
     contents = service.list_notes_in_folder(folder_path)
 
+    # Cast to satisfy mypy - we know the types
+    notes = contents["notes"]
+    subfolders = contents["subfolders"]
+    has_index = contents["has_index"]
+    assert isinstance(notes, list)
+    assert isinstance(subfolders, list)
+    assert isinstance(has_index, bool)
+
     return {
         "folder": folder_path or "/",
-        "subfolders": contents["subfolders"],
-        "notes": contents["notes"],
+        "notes": notes,
+        "subfolders": subfolders,
+        "has_index": has_index,
     }

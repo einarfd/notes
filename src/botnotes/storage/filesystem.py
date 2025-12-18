@@ -36,7 +36,24 @@ class FilesystemStorage(StorageBackend):
         return self.base_dir / f"{clean}.md"
 
     def save(self, note: Note) -> None:
-        """Save a note to disk."""
+        """Save a note to disk.
+
+        Raises:
+            ValueError: If the note path would overlap with an existing folder.
+        """
+        # Check for overlapping paths (note at same path as folder with children)
+        # This is not allowed except for index notes
+        if not note.path.endswith("/index") and note.path != "index":
+            # Check if there are any notes under this path (making it a folder)
+            prefix = note.path + "/"
+            existing_paths = self.list_all()
+            has_children = any(p.startswith(prefix) for p in existing_paths)
+            if has_children:
+                raise ValueError(
+                    f"Cannot create note at '{note.path}' - a folder with that name exists. "
+                    f"Use '{note.path}/index' for an index note."
+                )
+
         file_path = self._path_to_file(note.path)
         file_path.parent.mkdir(parents=True, exist_ok=True)
         file_path.write_text(note.to_markdown())
@@ -66,39 +83,57 @@ class FilesystemStorage(StorageBackend):
             paths.append(path)
         return sorted(paths)
 
-    def list_by_prefix(self, prefix: str) -> dict[str, list[str]]:
+    def list_by_prefix(self, prefix: str) -> dict[str, list[str] | bool]:
         """List notes and subfolders within a folder.
+
+        Index notes ({folder}/index) are excluded from the notes list but
+        indicated via the 'has_index' flag. This is because index notes
+        serve as the folder's description, not as regular notes.
 
         Args:
             prefix: Folder path. Empty string = top-level only.
 
         Returns:
-            Dict with 'notes' (direct notes) and 'subfolders' (immediate subfolders).
+            Dict with:
+            - 'notes': Direct notes (excluding index notes)
+            - 'subfolders': Immediate subfolder paths
+            - 'has_index': True if an index note exists for this folder
         """
         prefix = prefix.strip().strip("/")
         paths = self.list_all()
 
         notes = []
         subfolders_set: set[str] = set()
+        has_index = False
+
+        # Determine the index path for this folder
+        index_path = f"{prefix}/index" if prefix else "index"
 
         if not prefix:
             # Top-level
             for p in paths:
-                if "/" not in p:
+                if p == "index":
+                    has_index = True
+                elif "/" not in p:
                     notes.append(p)
                 else:
                     subfolders_set.add(p.split("/")[0])
         else:
             prefix_slash = prefix + "/"
             for p in paths:
-                if p.startswith(prefix_slash):
+                if p == index_path:
+                    has_index = True
+                elif p.startswith(prefix_slash):
                     remainder = p[len(prefix_slash):]
-                    if "/" not in remainder:
+                    if remainder == "index":
+                        has_index = True
+                    elif "/" not in remainder:
                         notes.append(p)
                     else:
                         subfolders_set.add(prefix_slash + remainder.split("/")[0])
-            # Also include note at exactly the prefix path (e.g., "projects" note)
-            if prefix in paths:
-                notes.append(prefix)
 
-        return {"notes": sorted(notes), "subfolders": sorted(subfolders_set)}
+        return {
+            "notes": sorted(notes),
+            "subfolders": sorted(subfolders_set),
+            "has_index": has_index,
+        }

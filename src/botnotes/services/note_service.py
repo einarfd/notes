@@ -301,14 +301,20 @@ class NoteService:
         with self._lock.read_lock():
             return self.storage.list_all()
 
-    def list_notes_in_folder(self, folder: str = "") -> dict[str, list[str]]:
+    def list_notes_in_folder(self, folder: str = "") -> dict[str, list[str] | bool]:
         """List notes and subfolders in a specific folder.
+
+        Index notes ({folder}/index) are excluded from the notes list but
+        indicated via the 'has_index' flag.
 
         Args:
             folder: Folder path. Empty string = top-level only.
 
         Returns:
-            Dict with 'notes' (direct notes) and 'subfolders' (immediate subfolders).
+            Dict with:
+            - 'notes': Direct notes (excluding index notes)
+            - 'subfolders': Immediate subfolder paths
+            - 'has_index': True if an index note exists for this folder
         """
         with self._lock.read_lock():
             return self.storage.list_by_prefix(folder)

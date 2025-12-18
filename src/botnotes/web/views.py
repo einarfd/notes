@@ -367,8 +367,14 @@ def view_top_level_folder(request: Request) -> HTMLResponse:
     service = _get_service()
     contents = service.list_notes_in_folder("")
 
+    # Cast to satisfy mypy - we know the types
+    note_paths = contents["notes"]
+    subfolders = contents["subfolders"]
+    assert isinstance(note_paths, list)
+    assert isinstance(subfolders, list)
+
     notes = []
-    for path in contents["notes"]:
+    for path in note_paths:
         note = service.read_note(path)
         if note:
             notes.append(note)
@@ -378,7 +384,7 @@ def view_top_level_folder(request: Request) -> HTMLResponse:
         name="folder_view.html",
         context={
             "notes": notes,
-            "subfolders": contents["subfolders"],
+            "subfolders": subfolders,
             "folder": "",
             "breadcrumbs": [],
         },
@@ -391,8 +397,14 @@ def view_folder(request: Request, path: str) -> HTMLResponse:
     service = _get_service()
     contents = service.list_notes_in_folder(path)
 
+    # Cast to satisfy mypy - we know the types
+    note_paths = contents["notes"]
+    subfolders = contents["subfolders"]
+    assert isinstance(note_paths, list)
+    assert isinstance(subfolders, list)
+
     notes = []
-    for note_path in contents["notes"]:
+    for note_path in note_paths:
         note = service.read_note(note_path)
         if note:
             notes.append(note)
@@ -402,7 +414,7 @@ def view_folder(request: Request, path: str) -> HTMLResponse:
         name="folder_view.html",
         context={
             "notes": notes,
-            "subfolders": contents["subfolders"],
+            "subfolders": subfolders,
             "folder": path,
             "breadcrumbs": _build_breadcrumbs(path),
         },
