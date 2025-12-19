@@ -5,7 +5,7 @@ import secrets
 from pathlib import Path
 
 from botnotes.backup import clear_notes, export_notes, import_notes
-from botnotes.config import REQUIRED_DATA_VERSION, Config, get_config
+from botnotes.config import REQUIRED_DATA_VERSION, Config, DataVersionError, get_config
 from botnotes.migrations import ensure_git_initialized, find_overlapping_notes, run_migrations
 from botnotes.services import NoteService
 
@@ -84,6 +84,13 @@ def serve(host: str | None, port: int | None) -> None:
     from botnotes.server import mcp
 
     config = Config.load()
+
+    # Check data version before starting
+    try:
+        config.validate_data_version()
+    except DataVersionError as e:
+        print(f"Error: {e}")
+        return
 
     # HTTP mode requires auth - fail early with clear message
     config.validate_for_http()
